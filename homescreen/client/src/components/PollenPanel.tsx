@@ -1,7 +1,6 @@
 import { EmptyState } from "./EmptyState";
 import { PanelFooter } from "./PanelFooter";
 import { PanelFrame } from "./PanelFrame";
-import { StatusChip } from "./StatusChip";
 import { getStatusLabel } from "../lib/format";
 import type { PollenData, ResourceState } from "../types/dashboard";
 
@@ -28,36 +27,18 @@ export function PollenPanel(props: PollenPanelProps) {
             }
         >
             {data ? (
-                <>
-                    <div className="pollen-summary-card">
-                        <strong>{data.summary}</strong>
-                        <span>{data.message}</span>
-                    </div>
-
-                    <div className="chip-row">
-                        <StatusChip label={data.source === "google-pollen" ? "Google Pollen API" : "Demo-data"} />
-                    </div>
-
-                    <div className="pollen-list">
-                        {data.types.map((item) => (
-                            <article className="pollen-card" key={item.code}>
-                                <div className="pollen-index" style={{ backgroundColor: item.color }}>
-                                    {item.value}
-                                </div>
-
-                                <div className="pollen-copy">
-                                    <strong>{item.name}</strong>
-                                    <span>
-                                        {item.category}
-                                        {item.inSeason ? " · i sasong" : " · ur sasong"}
-                                    </span>
-                                    <p>{item.description}</p>
-                                    {item.recommendation ? <small>{item.recommendation}</small> : null}
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                </>
+                <div className="pollen-list">
+                    {data.types.slice(0, 3).map((item) => (
+                        <article className="pollen-card" key={item.code}>
+                            <div className="pollen-index" style={{ backgroundColor: item.color }}>
+                                {item.value}
+                            </div>
+                            <div className="pollen-copy">
+                                <strong>{item.name}</strong>
+                            </div>
+                        </article>
+                    ))}
+                </div>
             ) : (
                 <EmptyState label={error ?? "Hamtar pollenprognos..."} />
             )}

@@ -1,32 +1,32 @@
 /* Basregler som gäller för hela dokumentet innan appens egna komponentstilar tar över. */
 html {
-    color-scheme: light;
-    font-size: 16px;
+  color-scheme: dark;
+  font-size: 17px;
 }
 
 /* Gör storleksberäkningar mer förutsägbara i hela appen. */
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 html,
 body,
 #root {
-    /* Roten måste kunna växa till full höjd så att dashboarden kan fylla skärmen. */
-    min-height: 100%;
+  /* Roten måste kunna växa till full höjd så att dashboarden kan fylla skärmen. */
+  min-height: 100%;
 }
 
 body {
-    /* Global bakgrund och typsnitt för hela dashboarden. */
-    margin: 0;
-    background:
-        radial-gradient(circle at top, rgba(239, 125, 87, 0.2), transparent 32%),
-        linear-gradient(160deg, #f9f1e6 0%, #efe3d2 48%, #e6ecde 100%);
-    font-family: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+  /* Global bakgrund och typsnitt för hela dashboarden. */
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(29, 145, 175, 0.18), transparent 42%),
+    linear-gradient(160deg, #040a11 0%, #071320 48%, #0c1b2a 100%);
+  font-family: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
 }
 
 button,
 a {
-    /* Hjälper touchenheter att reagera direkt på tryck. */
-    touch-action: manipulation;
+  /* Hjälper touchenheter att reagera direkt på tryck. */
+  touch-action: manipulation;
 }

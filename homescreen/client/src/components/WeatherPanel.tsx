@@ -1,7 +1,5 @@
 import { PanelFooter } from "./PanelFooter";
 import { PanelFrame } from "./PanelFrame";
-import { MetricCard } from "./MetricCard";
-import { StatusChip } from "./StatusChip";
 import { EmptyState } from "./EmptyState";
 import { formatShortTime, getStatusLabel } from "../lib/format";
 import type { ResourceState, WeatherData } from "../types/dashboard";
@@ -13,6 +11,13 @@ type WeatherPanelProps = {
 // Väderpanelen visar nuvärdet först och detaljer i andra hand.
 export function WeatherPanel(props: WeatherPanelProps) {
     const { data, error, lastLoadedAt } = props.state;
+
+    const now = new Date();
+    const todayKey = now.toISOString().slice(0, 10);
+    const tomorrowKey = new Date(now.getTime() + 24 * 60 * 60_000).toISOString().slice(0, 10);
+
+    const todayForecast = data?.hourly.filter((item) => item.time.startsWith(todayKey)).slice(0, 4) ?? [];
+    const tomorrowForecast = data?.hourly.filter((item) => item.time.startsWith(tomorrowKey)).slice(0, 4) ?? [];
 
     return (
         <PanelFrame
@@ -34,34 +39,46 @@ export function WeatherPanel(props: WeatherPanelProps) {
                         <div>
                             <div className="weather-temp">
                                 {data.current.temperatureC}
-                                <span>Grader</span>
+                                <span>°C</span>
                             </div>
                             <p className="weather-summary">{data.current.description}</p>
                         </div>
+                    </div>
 
-                        <div className="weather-metrics">
-                            <MetricCard label="Vind" value={`${data.current.windKph} km/h`} />
-                            <MetricCard label="Luftfuktighet" value={`${data.current.humidity}%`} />
-                            <MetricCard label="Nederbord" value={`${data.current.precipitationMm} mm/h`} />
-                            <MetricCard label="Kalla" value={data.source === "smhi" ? "SMHI" : "Demo"} />
+                    <div className="weather-forecast">
+                        <div className="forecast-group">
+                            <strong>Resten av dagen</strong>
+                            {todayForecast.length ? (
+                                <ul>
+                                    {todayForecast.map((item) => (
+                                        <li key={item.time}>
+                                            <span className="forecast-time">{formatShortTime(item.time)}</span>
+                                            <span className="forecast-temp">{item.temperatureC}°</span>
+                                            <span className="forecast-label">{item.description}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="forecast-empty">Ingen data.</p>
+                            )}
                         </div>
-                    </div>
 
-                    <div className="chip-row">
-                        <StatusChip label={data.message} />
-                    </div>
-
-                    <div className="hourly-strip">
-                        {data.hourly.map((item) => (
-                            <article className="hourly-card" key={item.time}>
-                                <span className="hourly-time">{formatShortTime(item.time)}</span>
-                                <strong>{item.temperatureC} deg</strong>
-                                <span>{item.description}</span>
-                                <span className="hourly-muted">
-                                    {item.windKph} km/h · {item.precipitationMm} mm/h
-                                </span>
-                            </article>
-                        ))}
+                        <div className="forecast-group">
+                            <strong>Imorgon</strong>
+                            {tomorrowForecast.length ? (
+                                <ul>
+                                    {tomorrowForecast.map((item) => (
+                                        <li key={item.time}>
+                                            <span className="forecast-time">{formatShortTime(item.time)}</span>
+                                            <span className="forecast-temp">{item.temperatureC}°</span>
+                                            <span className="forecast-label">{item.description}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="forecast-empty">Ingen data.</p>
+                            )}
+                        </div>
                     </div>
                 </>
             ) : (

@@ -64,8 +64,8 @@ async function loadWeather(): Promise<WeatherResponse> {
     const url = `https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/${longitude}/lat/${latitude}/data.json`;
     const data = await fetchJson<SmhiForecastResponse>(url);
 
-    // Vi tar de första tidsstegen eftersom de ligger närmast "nu".
-    const timeSeries = data.timeSeries.slice(0, 6);
+    // Vi tar ett dygn av timvisa prognoser, så vi kan visa resten av dagen och imorgon.
+    const timeSeries = data.timeSeries.slice(0, 24);
     const currentPoint = timeSeries[0];
 
     return {
@@ -111,8 +111,8 @@ function createMockWeather(message: string): WeatherResponse {
             temperatureC: 8,
             windKph: 13,
         },
-        hourly: [0, 1, 2, 3, 4, 5].map((offset) => ({
-            description: offset < 3 ? "Latt molnigt" : "Klart",
+        hourly: Array.from({ length: 24 }).map((_, offset) => ({
+            description: offset < 12 ? "Latt molnigt" : "Klart",
             precipitationMm: offset === 2 ? 0.4 : 0,
             temperatureC: 8 - Math.max(0, offset - 1),
             time: new Date(now + offset * 60 * 60_000).toISOString(),

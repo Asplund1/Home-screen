@@ -27,6 +27,11 @@ type GlucoseResponse = {
         valueMgdl: number;
         valueMmol: number;
     } | null;
+    history: Array<{
+        measuredAt: string;
+        valueMmol: number;
+        valueMgdl: number;
+    }>;
     source: "mock" | "nightscout";
     status: "config_missing" | "fallback" | "live";
     updatedAt: string;
@@ -55,17 +60,18 @@ async function loadGlucose(): Promise<GlucoseResponse> {
     const normalizedBaseUrl = getNightscoutApiBase(siteUrl);
     const token = envString("NIGHTSCOUT_TOKEN");
 
-    // Vi hamtar de två senaste posterna sa att vi kan visa delta om Nightscout inte skickar det direkt.
+    // Vi hämtar ett antal poster så att vi kan rita en enkel trendgraf.
+    const count = 48; // ungefär ett dygn med datapunkter (kan variera beroende på hur ofta Nightscout loggar)
     const url = buildUrl(`${normalizedBaseUrl}/entries.json`, {
-        count: 2,
+        count,
         token,
     });
 
     const entries = await fetchJson<NightscoutEntry[]>(url, {
         headers: token
             ? {
-                  Authorization: `Bearer ${token}`,
-              }
+                Authorization: `Bearer ${token}`,
+            }
             : undefined,
     });
 
@@ -81,6 +87,15 @@ async function loadGlucose(): Promise<GlucoseResponse> {
     const deltaMgdl = getDeltaMgdl(latestEntry, previousEntry);
     const trendMeta = getNightscoutTrend(latestEntry.direction);
     const valueMgdl = latestEntry.sgv;
+
+    const history = entries
+        .filter((entry) => typeof entry.sgv === "number")
+        .map((entry) => ({
+            measuredAt: getMeasuredAt(entry),
+            valueMgdl: entry.sgv!,
+            valueMmol: Math.round((entry.sgv! / 18) * 10) / 10,
+        }))
+        .sort((a, b) => Date.parse(a.measuredAt) - Date.parse(b.measuredAt));
 
     return {
         message: "Nightscout-data hamtas fran din egen site.",
@@ -99,6 +114,7 @@ async function loadGlucose(): Promise<GlucoseResponse> {
             valueMgdl,
             valueMmol: Math.round((valueMgdl / 18) * 10) / 10,
         },
+        history,
         source: "nightscout",
         status: "live",
         updatedAt: measuredAt,
@@ -169,6 +185,16 @@ function createConfigMissingGlucose(): GlucoseResponse {
 }
 
 function createMockGlucose(message: string): GlucoseResponse {
+    const now = Date.now();
+    const history = Array.from({ length: 24 }).map((_, index) => {
+        const valueMgdl = 126 + Math.sin(index / 4) * 15;
+        return {
+            measuredAt: new Date(now - (23 - index) * 60 * 60_000).toISOString(),
+            valueMgdl,
+            valueMmol: Math.round((valueMgdl / 18) * 10) / 10,
+        };
+    });
+
     return {
         message,
         note: "Demo-data visas tills Nightscout ar kopplat.",
@@ -183,6 +209,7 @@ function createMockGlucose(message: string): GlucoseResponse {
             valueMgdl: 126,
             valueMmol: 7,
         },
+        history,
         source: "mock",
         status: "fallback",
         updatedAt: new Date().toISOString(),

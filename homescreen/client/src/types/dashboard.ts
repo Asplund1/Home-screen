@@ -31,6 +31,12 @@ export type WeatherData = {
     updatedAt: string;
 };
 
+export type GlucoseHistoryPoint = {
+    measuredAt: string;
+    valueMgdl: number;
+    valueMmol: number;
+};
+
 export type GlucoseData = {
     message: string;
     note: string | null;
@@ -45,6 +51,7 @@ export type GlucoseData = {
         valueMgdl: number;
         valueMmol: number;
     } | null;
+    history: GlucoseHistoryPoint[];
     source: "mock" | "nightscout";
     status: ResourceStatus;
     updatedAt: string;
