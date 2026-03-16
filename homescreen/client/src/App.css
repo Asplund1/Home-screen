@@ -22,20 +22,6 @@
   color: var(--text-main);
 }
 
-.clock-overlay {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  padding: 0.55rem 0.85rem;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.9rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main);
-  z-index: 2;
-}
-
 /* Bakgrundsformerna ger lite djup utan extra bilder. */
 .ambient {
   position: absolute;
@@ -128,8 +114,40 @@
 /* Huvudlayouten ar tva kolumner i landskapslage. */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    "weather glucose"
+    "pollen clock";
   gap: 1rem;
+}
+
+.panel-weather {
+  grid-area: weather;
+}
+
+.panel-glucose {
+  grid-area: glucose;
+}
+
+.panel-pollen {
+  grid-area: pollen;
+}
+
+.panel-clock {
+  grid-area: clock;
+}
+
+.clock-panel {
+  display: grid;
+  height: 100%;
+  place-items: center;
+}
+
+.clock-panel-time {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-family: "Avenir Next", "Segoe UI Semibold", "Trebuchet MS", sans-serif;
+  letter-spacing: -0.05em;
 }
 
 .panel {
@@ -521,25 +539,13 @@
     grid-template-rows: 1fr 1fr;
     grid-template-areas:
       "weather glucose"
-      "pollen pollen";
+      "pollen clock";
     gap: 0.6rem;
   }
 
   .panel {
     padding: 0.9rem;
     overflow: hidden;
-  }
-
-  .panel-weather {
-    grid-area: weather;
-  }
-
-  .panel-glucose {
-    grid-area: glucose;
-  }
-
-  .panel-pollen {
-    grid-area: pollen;
   }
 
   .panel-header h2 {

@@ -21,23 +21,24 @@ type SmhiForecastResponse = {
 type WeatherResponse = {
     current: {
         description: string;
-        humidity: number;
-        precipitationMm: number;
-        temperatureC: number;
-        windKph: number;
+        humidity: number | null;
+        precipitationMm: number | null;
+        temperatureC: number | null;
+        windKph: number | null;
     };
     hourly: Array<{
         description: string;
-        precipitationMm: number;
-        temperatureC: number;
+        precipitationMm: number | null;
+        temperatureC: number | null;
         time: string;
-        windKph: number;
+        windKph: number | null;
     }>;
     location: string;
     message: string;
     source: "mock" | "smhi";
     status: "fallback" | "live";
-    updatedAt: string;
+    updatedAt: string; // SMHI approvedTime
+    fetchedAt: string; // when our backend fetched it
 };
 
 const router = Router();
@@ -64,36 +65,44 @@ async function loadWeather(): Promise<WeatherResponse> {
     const url = `https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/${longitude}/lat/${latitude}/data.json`;
     const data = await fetchJson<SmhiForecastResponse>(url);
 
-    // Vi tar ett dygn av timvisa prognoser, så vi kan visa resten av dagen och imorgon.
-    const timeSeries = data.timeSeries.slice(0, 24);
+    // Hämta fler punkter än 24, eftersom SMHI-tidsserien kan ha varierande upplösning.
+    // Frontend får själv välja vad som gäller för idag/imorgon.
+    const timeSeries = data.timeSeries.slice(0, 48);
     const currentPoint = timeSeries[0];
+
+    const toMaybeNumber = (value: number | null) => (value === null ? null : roundValue(value));
 
     return {
         current: {
             description: getSmhiSymbolLabel(getParameterValue(currentPoint.parameters, "Wsymb2")),
-            humidity: roundValue(getParameterValue(currentPoint.parameters, "r")),
-            precipitationMm: roundValue(getParameterValue(currentPoint.parameters, "pmean")),
-            temperatureC: roundValue(getParameterValue(currentPoint.parameters, "t")),
-            windKph: roundValue(getParameterValue(currentPoint.parameters, "ws") * 3.6),
+            humidity: toMaybeNumber(getParameterValue(currentPoint.parameters, "r")),
+            precipitationMm: toMaybeNumber(getParameterValue(currentPoint.parameters, "pmean")),
+            temperatureC: toMaybeNumber(getParameterValue(currentPoint.parameters, "t")),
+            windKph: toMaybeNumber(getParameterValue(currentPoint.parameters, "ws") * 3.6),
         },
         hourly: timeSeries.map((point) => ({
             description: getSmhiSymbolLabel(getParameterValue(point.parameters, "Wsymb2")),
-            precipitationMm: roundValue(getParameterValue(point.parameters, "pmean")),
-            temperatureC: roundValue(getParameterValue(point.parameters, "t")),
+            precipitationMm: toMaybeNumber(getParameterValue(point.parameters, "pmean")),
+            temperatureC: toMaybeNumber(getParameterValue(point.parameters, "t")),
             time: point.validTime,
-            windKph: roundValue(getParameterValue(point.parameters, "ws") * 3.6),
+            windKph: toMaybeNumber(getParameterValue(point.parameters, "ws") * 3.6),
         })),
         location,
         message: "SMHI prognos for de narmaste timmarna.",
         source: "smhi",
         status: "live",
         updatedAt: data.approvedTime,
+        fetchedAt: new Date().toISOString(),
     };
 }
 
-function getParameterValue(parameters: SmhiParameter[], name: string): number {
+function getParameterValue(parameters: SmhiParameter[], name: string): number | null {
     // Varje parameter ligger som ett namn + en lista med värden; vi använder första värdet.
-    return parameters.find((parameter) => parameter.name === name)?.values[0] ?? 0;
+    const match = parameters.find((parameter) => parameter.name === name);
+    if (!match || match.values.length === 0) {
+        return null;
+    }
+    return match.values[0];
 }
 
 function roundValue(value: number): number {
@@ -111,8 +120,8 @@ function createMockWeather(message: string): WeatherResponse {
             temperatureC: 8,
             windKph: 13,
         },
-        hourly: Array.from({ length: 24 }).map((_, offset) => ({
-            description: offset < 12 ? "Latt molnigt" : "Klart",
+        hourly: Array.from({ length: 48 }).map((_, offset) => ({
+            description: offset < 12 ? "Lätt molnigt" : "Klart",
             precipitationMm: offset === 2 ? 0.4 : 0,
             temperatureC: 8 - Math.max(0, offset - 1),
             time: new Date(now + offset * 60 * 60_000).toISOString(),
@@ -123,18 +132,23 @@ function createMockWeather(message: string): WeatherResponse {
         source: "mock",
         status: "fallback",
         updatedAt: new Date().toISOString(),
+        fetchedAt: new Date().toISOString(),
     };
 }
 
-function getSmhiSymbolLabel(symbol: number): string {
-    // Wsymb2 ar SMHI:s kod for vädersymbol. Här översätter vi de vanligaste värdena till text.
+function getSmhiSymbolLabel(symbol: number | null): string {
+    // Wsymb2 är SMHI:s kod för vädersymbol. Här översätter vi de vanligaste värdena till text.
+    if (symbol === null) {
+        return "Okänt väder";
+    }
+
     switch (symbol) {
         case 1:
             return "Klart";
         case 2:
-            return "Nastan klart";
+            return "Nästan klart";
         case 3:
-            return "Vaxlande molnighet";
+            return "Växlande molnighet";
         case 4:
             return "Halvklart";
         case 5:
@@ -146,17 +160,17 @@ function getSmhiSymbolLabel(symbol: number): string {
         case 8:
         case 9:
         case 10:
-            return "Latt regnskur";
+            return "Lätt regnskur";
         case 11:
         case 12:
             return "Regnskur";
         case 13:
         case 14:
-            return "Askskur";
+            return "Åskskur";
         case 15:
         case 16:
         case 17:
-            return "Snoskruv";
+            return "Snöskur";
         case 18:
         case 19:
         case 20:
@@ -164,15 +178,15 @@ function getSmhiSymbolLabel(symbol: number): string {
         case 21:
         case 22:
         case 23:
-            return "Aska";
+            return "Åska";
         case 24:
         case 25:
         case 26:
-            return "Sno";
+            return "Snö";
         case 27:
-            return "Blandad nederbord";
+            return "Blandad nederbörd";
         default:
-            return "Okant vader";
+            return "Okänt väder";
     }
 }
 

@@ -2,9 +2,9 @@ import "./App.css";
 import { GlucosePanel } from "./components/GlucosePanel";
 import { PollenPanel } from "./components/PollenPanel";
 import { WeatherPanel } from "./components/WeatherPanel";
+import { ClockPanel } from "./components/ClockPanel";
 import { usePollingResource } from "./hooks/usePollingResource";
 import { useTicker } from "./hooks/useTicker";
-import { formatClock } from "./lib/format";
 import type { GlucoseData, PollenData, WeatherData } from "./types/dashboard";
 
 const weatherRefreshMs = 10 * 60_000;
@@ -23,12 +23,11 @@ export default function App() {
       <div className="ambient ambient-a" />
       <div className="ambient ambient-b" />
 
-      <div className="clock-overlay">{formatClock(now)}</div>
-
       <main className="dashboard-grid">
         <WeatherPanel state={weatherState} />
         <GlucosePanel state={glucoseState} />
         <PollenPanel state={pollenState} />
+        <ClockPanel now={now} />
       </main>
     </div>
   );

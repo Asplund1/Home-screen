@@ -12,23 +12,24 @@ export type ResourceState<T> = {
 export type WeatherData = {
     current: {
         description: string;
-        humidity: number;
-        precipitationMm: number;
-        temperatureC: number;
-        windKph: number;
+        humidity: number | null;
+        precipitationMm: number | null;
+        temperatureC: number | null;
+        windKph: number | null;
     };
     hourly: Array<{
         description: string;
-        precipitationMm: number;
-        temperatureC: number;
+        precipitationMm: number | null;
+        temperatureC: number | null;
         time: string;
-        windKph: number;
+        windKph: number | null;
     }>;
     location: string;
     message: string;
     source: "mock" | "smhi";
     status: ResourceStatus;
     updatedAt: string;
+    fetchedAt: string;
 };
 
 export type GlucoseHistoryPoint = {

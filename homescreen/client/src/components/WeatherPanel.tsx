@@ -12,12 +12,17 @@ type WeatherPanelProps = {
 export function WeatherPanel(props: WeatherPanelProps) {
     const { data, error, lastLoadedAt } = props.state;
 
-    const now = new Date();
-    const todayKey = now.toISOString().slice(0, 10);
-    const tomorrowKey = new Date(now.getTime() + 24 * 60 * 60_000).toISOString().slice(0, 10);
+    const pad = (value: number) => value.toString().padStart(2, "0");
+    const dateKey = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
-    const todayForecast = data?.hourly.filter((item) => item.time.startsWith(todayKey)).slice(0, 4) ?? [];
-    const tomorrowForecast = data?.hourly.filter((item) => item.time.startsWith(tomorrowKey)).slice(0, 4) ?? [];
+    const now = new Date();
+    const todayKey = dateKey(now);
+    const tomorrowKey = dateKey(new Date(now.getTime() + 24 * 60 * 60_000));
+
+    const todayForecast =
+        data?.hourly.filter((item) => dateKey(new Date(item.time)) === todayKey).slice(0, 4) ?? [];
+    const tomorrowForecast =
+        data?.hourly.filter((item) => dateKey(new Date(item.time)) === tomorrowKey).slice(0, 4) ?? [];
 
     return (
         <PanelFrame
@@ -38,7 +43,7 @@ export function WeatherPanel(props: WeatherPanelProps) {
                     <div className="weather-hero">
                         <div>
                             <div className="weather-temp">
-                                {data.current.temperatureC}
+                                {data.current.temperatureC != null ? data.current.temperatureC : "-"}
                                 <span>°C</span>
                             </div>
                             <p className="weather-summary">{data.current.description}</p>
@@ -53,7 +58,9 @@ export function WeatherPanel(props: WeatherPanelProps) {
                                     {todayForecast.map((item) => (
                                         <li key={item.time}>
                                             <span className="forecast-time">{formatShortTime(item.time)}</span>
-                                            <span className="forecast-temp">{item.temperatureC}°</span>
+                                            <span className="forecast-temp">
+                                                {item.temperatureC != null ? `${item.temperatureC}°` : "-"}
+                                            </span>
                                             <span className="forecast-label">{item.description}</span>
                                         </li>
                                     ))}
@@ -70,7 +77,9 @@ export function WeatherPanel(props: WeatherPanelProps) {
                                     {tomorrowForecast.map((item) => (
                                         <li key={item.time}>
                                             <span className="forecast-time">{formatShortTime(item.time)}</span>
-                                            <span className="forecast-temp">{item.temperatureC}°</span>
+                                            <span className="forecast-temp">
+                                                {item.temperatureC != null ? `${item.temperatureC}°` : "-"}
+                                            </span>
                                             <span className="forecast-label">{item.description}</span>
                                         </li>
                                     ))}

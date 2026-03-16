@@ -3,48 +3,37 @@ import { withCache } from "../lib/cache";
 import { envNumber, envString } from "../lib/env";
 import { buildUrl, fetchJson } from "../lib/http";
 
-type GooglePollenTypeInfo = {
-    code: string;
-    displayName: string;
-    inSeason: boolean;
-    healthRecommendations?: string[];
-    indexInfo?: {
-        category: string;
-        color?: {
-            blue?: number;
-            green?: number;
-            red?: number;
-        };
-        indexDescription?: string;
-        value?: number;
+type OpenMeteoAirQualityResponse = {
+    latitude: number;
+    longitude: number;
+    timezone?: string;
+    hourly?: {
+        time: string[];
+        alder_pollen?: Array<number | null>;
+        birch_pollen?: Array<number | null>;
+        grass_pollen?: Array<number | null>;
+        mugwort_pollen?: Array<number | null>;
     };
 };
 
-type GooglePollenColor = NonNullable<NonNullable<GooglePollenTypeInfo["indexInfo"]>["color"]>;
-
-type GooglePollenResponse = {
-    dailyInfo?: Array<{
-        pollenTypeInfo?: GooglePollenTypeInfo[];
-    }>;
-    regionCode?: string;
+type PollenType = {
+    category: string;
+    code: string;
+    color: string;
+    description: string;
+    inSeason: boolean;
+    name: string;
+    recommendation: string | null;
+    value: number;
 };
 
 type PollenResponse = {
     location: string;
     message: string;
-    source: "google-pollen" | "mock";
-    status: "config_missing" | "fallback" | "live";
+    source: "open-meteo" | "mock";
+    status: "fallback" | "live";
     summary: string;
-    types: Array<{
-        category: string;
-        code: string;
-        color: string;
-        description: string;
-        inSeason: boolean;
-        name: string;
-        recommendation: string | null;
-        value: number;
-    }>;
+    types: PollenType[];
     updatedAt: string;
 };
 
@@ -52,77 +41,175 @@ const router = Router();
 
 router.get("/", async (_req, res) => {
     try {
-        // Pollenprognosen ändras långsamt och kan därför cacha längre.
+        // Pollenprognosen ändras relativt långsamt, så vi cachar den en stund.
         const cacheMs = envNumber("POLLEN_CACHE_MS", 60 * 60_000);
         const payload = await withCache("pollen", cacheMs, loadPollen);
         res.json(payload);
     } catch (error) {
         console.error("Pollen route failed:", error);
-        res.json(createMockPollen("Google Pollen API kunde inte hamtas just nu."));
+        res.json(createMockPollen("Open-Meteo kunde inte hämtas just nu."));
     }
 });
 
 async function loadPollen(): Promise<PollenResponse> {
-    const apiKey = envString("GOOGLE_POLLEN_API_KEY");
-    if (!apiKey) {
-        return createConfigMissingPollen();
-    }
-
     const latitude = envString("WEATHER_LATITUDE", "58.4108") ?? "58.4108";
     const longitude = envString("WEATHER_LONGITUDE", "15.6214") ?? "15.6214";
     const location = envString("WEATHER_LOCATION_NAME", "Linkoping") ?? "Linkoping";
-    const languageCode = envString("POLLEN_LANGUAGE_CODE", "sv") ?? "sv";
+    const timezone = envString("POLLEN_TIMEZONE", "Europe/Stockholm") ?? "Europe/Stockholm";
 
-    // Vi använder en dags prognos eftersom dashboarden bara visar dagens viktigaste pollenläge.
-    const url = buildUrl("https://pollen.googleapis.com/v1/forecast:lookup", {
-        "days": 1,
-        "key": apiKey,
-        "languageCode": languageCode,
-        "location.latitude": latitude,
-        "location.longitude": longitude,
-        "plantsDescription": false,
+    const url = buildUrl("https://air-quality-api.open-meteo.com/v1/air-quality", {
+        latitude,
+        longitude,
+        timezone,
+        forecast_days: 1,
+        hourly: "alder_pollen,birch_pollen,grass_pollen,mugwort_pollen",
     });
 
-    const data = await fetchJson<GooglePollenResponse>(url);
-    const pollenTypes = (data.dailyInfo?.[0]?.pollenTypeInfo ?? [])
-        .filter((type) => type.indexInfo?.value !== undefined)
-        .sort((left, right) => (right.indexInfo?.value ?? 0) - (left.indexInfo?.value ?? 0))
-        .slice(0, 3)
-        .map((type) => ({
-            category: type.indexInfo?.category ?? "Okand",
-            code: type.code,
-            color: toHexColor(type.indexInfo?.color),
-            description: type.indexInfo?.indexDescription ?? "Ingen beskrivning",
-            inSeason: type.inSeason,
-            name: type.displayName,
-            recommendation: type.healthRecommendations?.[0] ?? null,
-            value: type.indexInfo?.value ?? 0,
-        }));
+    const data = await fetchJson<OpenMeteoAirQualityResponse>(url);
+    const hourly = data.hourly;
+
+    if (!hourly || !hourly.time || hourly.time.length === 0) {
+        throw new Error("Open-Meteo returned no hourly pollen data.");
+    }
+
+    const currentIndex = getClosestHourIndex(hourly.time);
+
+    const pollenTypes: PollenType[] = [
+        createPollenType({
+            code: "ALDER",
+            name: "Al",
+            value: getHourlyValue(hourly.alder_pollen, currentIndex),
+        }),
+        createPollenType({
+            code: "BIRCH",
+            name: "Björk",
+            value: getHourlyValue(hourly.birch_pollen, currentIndex),
+        }),
+        createPollenType({
+            code: "GRASS",
+            name: "Gräs",
+            value: getHourlyValue(hourly.grass_pollen, currentIndex),
+        }),
+        createPollenType({
+            code: "MUGWORT",
+            name: "Gråbo",
+            value: getHourlyValue(hourly.mugwort_pollen, currentIndex),
+        }),
+    ]
+        .filter((type) => type.value > 0)
+        .sort((left, right) => right.value - left.value)
+        .slice(0, 3);
 
     const topType = pollenTypes[0];
 
     return {
         location,
-        message: data.regionCode ? `Region: ${data.regionCode}` : "Dagens pollenprognos.",
-        source: "google-pollen",
+        message: `Pollenprognos för ${location} från Open-Meteo.`,
+        source: "open-meteo",
         status: "live",
         summary: topType
-            ? `${topType.name} ar hogst idag (${topType.category.toLowerCase()}).`
-            : "Ingen tydlig pollenrisk hittades idag.",
+            ? `${topType.name} är högst just nu (${topType.category.toLowerCase()}).`
+            : "Ingen tydlig pollenrisk hittades just nu.",
         types: pollenTypes,
         updatedAt: new Date().toISOString(),
     };
 }
 
-function createConfigMissingPollen(): PollenResponse {
+function getClosestHourIndex(times: string[]): number {
+    const now = Date.now();
+
+    let bestIndex = 0;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    for (let index = 0; index < times.length; index += 1) {
+        const timestamp = new Date(times[index]).getTime();
+        const distance = Math.abs(timestamp - now);
+
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = index;
+        }
+    }
+
+    return bestIndex;
+}
+
+function getHourlyValue(values: Array<number | null> | undefined, index: number): number {
+    const value = values?.[index];
+
+    if (typeof value !== "number" || Number.isNaN(value)) {
+        return 0;
+    }
+
+    return Math.round(value * 10) / 10;
+}
+
+function createPollenType(input: {
+    code: string;
+    name: string;
+    value: number;
+}): PollenType {
+    const level = getPollenLevel(input.value);
+
     return {
-        location: envString("WEATHER_LOCATION_NAME", "Linkoping") ?? "Linkoping",
-        message: "Lagg till GOOGLE_POLLEN_API_KEY for riktig pollenprognos.",
-        source: "mock",
-        status: "config_missing",
-        summary: "Pollenpanelen ar inte konfigurerad an.",
-        types: [],
-        updatedAt: new Date().toISOString(),
+        category: level.label,
+        code: input.code,
+        color: level.color,
+        description: level.description,
+        inSeason: input.value > 0,
+        name: input.name,
+        recommendation: level.recommendation,
+        value: input.value,
+    };
+}
+
+function getPollenLevel(value: number): {
+    label: string;
+    color: string;
+    description: string;
+    recommendation: string | null;
+} {
+    if (value <= 0) {
+        return {
+            label: "Ingen",
+            color: "#5f8d4e",
+            description: "Inga tydliga pollennivåer just nu.",
+            recommendation: null,
+        };
+    }
+
+    if (value < 10) {
+        return {
+            label: "Låg",
+            color: "#5f8d4e",
+            description: "Låga pollennivåer.",
+            recommendation: null,
+        };
+    }
+
+    if (value < 50) {
+        return {
+            label: "Måttlig",
+            color: "#d9a441",
+            description: "Måttliga pollennivåer.",
+            recommendation: "Var uppmärksam om du är känslig.",
+        };
+    }
+
+    if (value < 100) {
+        return {
+            label: "Hög",
+            color: "#d98032",
+            description: "Höga pollennivåer.",
+            recommendation: "Begränsa längre vistelser ute om du har besvär.",
+        };
+    }
+
+    return {
+        label: "Mycket hög",
+        color: "#c94c4c",
+        description: "Mycket höga pollennivåer.",
+        recommendation: "Undvik onödig exponering utomhus om du är känslig.",
     };
 }
 
@@ -132,48 +219,31 @@ function createMockPollen(message: string): PollenResponse {
         message,
         source: "mock",
         status: "fallback",
-        summary: "Bjork ar mest relevant i demo-datan idag.",
+        summary: "Björk är mest relevant i demo-datan just nu.",
         types: [
             {
-                category: "Moderate",
-                code: "TREE",
+                category: "Måttlig",
+                code: "BIRCH",
                 color: "#d98032",
-                description: "Mellanrisk for tradpollen.",
+                description: "Måttliga pollennivåer.",
                 inSeason: true,
-                name: "Bjork",
-                recommendation: "Hall fonster stangda tidigt pa morgonen om du ar kanslig.",
-                value: 3,
+                name: "Björk",
+                recommendation: "Var uppmärksam om du är känslig.",
+                value: 24,
             },
             {
-                category: "Low",
+                category: "Låg",
                 code: "GRASS",
                 color: "#5f8d4e",
-                description: "Lag grasrisk idag.",
-                inSeason: false,
-                name: "Gras",
+                description: "Låga pollennivåer.",
+                inSeason: true,
+                name: "Gräs",
                 recommendation: null,
-                value: 1,
+                value: 4,
             },
         ],
         updatedAt: new Date().toISOString(),
     };
-}
-
-function toHexColor(color: GooglePollenColor | undefined): string {
-    // Google skickar RGB som 0-1-varden; här gör vi om dem till vanlig hex-farg.
-    if (!color) {
-        return "#5f8d4e";
-    }
-
-    const red = Math.round((color.red ?? 0) * 255);
-    const green = Math.round((color.green ?? 0) * 255);
-    const blue = Math.round((color.blue ?? 0) * 255);
-
-    return `#${toHexPart(red)}${toHexPart(green)}${toHexPart(blue)}`;
-}
-
-function toHexPart(value: number): string {
-    return value.toString(16).padStart(2, "0");
 }
 
 export default router;

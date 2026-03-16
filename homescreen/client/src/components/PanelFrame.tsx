@@ -19,7 +19,7 @@ export function PanelFrame(props: PanelFrameProps) {
                     <h2>{props.title}</h2>
                 </div>
 
-                <span className="status-pill">{props.status}</span>
+                {props.status ? <span className="status-pill">{props.status}</span> : null}
             </div>
 
             {props.children}
