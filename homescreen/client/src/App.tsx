@@ -33,26 +33,15 @@ export default function App() {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 2,
-        alignItems: "stretch",
-        height: "100%",
+        alignItems: "start",
       }}
     >
-      <Box
-        sx={{
-          display: "grid",
-          gap: 2,
-        }}
-      >
+      <Box sx={{ display: "grid", gap: 2 }}>
         <WeatherSection state={weatherState} />
         <PollenSection state={pollenState} />
       </Box>
 
-      <Box
-        sx={{
-          display: "grid",
-          gap: 2,
-        }}
-      >
+      <Box sx={{ display: "grid", gap: 2 }}>
         <GlucoseSection state={glucoseState} />
         <ClockSection now={now} />
       </Box>
