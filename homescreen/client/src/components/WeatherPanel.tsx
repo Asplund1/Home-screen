@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import { formatShortTime } from "../lib/format";
+import { formatShortTime } from "../library/format";
 import type { WeatherData } from "../types/dashboard";
 
 type WeatherPanelProps = {
@@ -21,153 +21,58 @@ export function WeatherPanel({
   }
 
   return (
-    <>
-      <Box
-        sx={{
-          display: "grid",
-          gap: 2,
-          gridTemplateColumns: { xs: "1fr", md: "1fr 18rem" },
-          alignItems: "start",
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              display: "flex",
-              alignItems: "baseline",
-              fontSize: { xs: "4rem", md: "6rem" },
-            }}
-          >
-            {data.current.temperatureC != null
-              ? data.current.temperatureC
-              : "-"}
-            <Typography
-              component="span"
-              sx={{ fontSize: "1.1rem", letterSpacing: 0 }}
-            >
-              °C
-            </Typography>
-          </Typography>
-          <Typography
-            sx={{
-              margin: "0.5rem 0 0",
-              color: "text.secondary",
-            }}
-          >
-            {data.current.description}
-          </Typography>
-        </Box>
-      </Box>
+    <Box sx={{ p: 3 }}>
+      <Typography sx={{ fontSize: { xs: "4rem", md: "6rem" } }}>
+        {data.current.temperatureC != null ? data.current.temperatureC : "-"}
+        <Typography component="span"> °C</Typography>
+      </Typography>
+
+      <Typography color="text.secondary">{data.current.description}</Typography>
 
       <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 1.5,
-        }}
+        sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, mt: 3 }}
       >
-        <Box sx={{ display: "grid", gap: "0.35rem" }}>
-          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            Resten av dagen
-          </Typography>
-          {todayForecast.length ? (
-            <Box
-              component="ul"
-              sx={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "grid",
-                gap: "0.4rem",
-              }}
-            >
-              {todayForecast.map((item) => (
-                <Box
-                  component="li"
-                  key={item.time}
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "auto minmax(0, 3rem) 1fr",
-                    gap: "0.5rem",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <Typography
-                    sx={{ color: "text.secondary", fontSize: "0.9rem" }}
-                  >
-                    {formatShortTime(item.time)}
-                  </Typography>
-                  <Typography sx={{ fontWeight: 700 }}>
-                    {item.temperatureC != null ? `${item.temperatureC}°` : "-"}
-                  </Typography>
-                  <Typography
-                    sx={{ color: "text.secondary", fontSize: "0.85rem" }}
-                  >
-                    {item.description}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          ) : (
-            <Typography
-              sx={{ margin: 0, color: "text.secondary", fontSize: "0.9rem" }}
-            >
-              Ingen data.
-            </Typography>
-          )}
-        </Box>
+        {[
+          { title: "Resten av dagen", items: todayForecast },
+          { title: "Imorgon", items: tomorrowForecast },
+        ].map((section) => (
+          <Box key={section.title}>
+            <Typography fontWeight="bold">{section.title}</Typography>
 
-        <Box sx={{ display: "grid", gap: "0.35rem" }}>
-          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            Imorgon
-          </Typography>
-          {tomorrowForecast.length ? (
-            <Box
-              component="ul"
-              sx={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "grid",
-                gap: "0.4rem",
-              }}
-            >
-              {tomorrowForecast.map((item) => (
-                <Box
-                  component="li"
-                  key={item.time}
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "auto minmax(0, 3rem) 1fr",
-                    gap: "0.5rem",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <Typography
-                    sx={{ color: "text.secondary", fontSize: "0.9rem" }}
+            {section.items.length ? (
+              <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
+                {section.items.map((item) => (
+                  <Box
+                    component="li"
+                    key={item.time}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "auto auto 1fr",
+                      gap: 1,
+                    }}
                   >
-                    {formatShortTime(item.time)}
-                  </Typography>
-                  <Typography sx={{ fontWeight: 700 }}>
-                    {item.temperatureC != null ? `${item.temperatureC}°` : "-"}
-                  </Typography>
-                  <Typography
-                    sx={{ color: "text.secondary", fontSize: "0.85rem" }}
-                  >
-                    {item.description}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          ) : (
-            <Typography
-              sx={{ margin: 0, color: "text.secondary", fontSize: "0.9rem" }}
-            >
-              Ingen data.
-            </Typography>
-          )}
-        </Box>
+                    <Typography color="text.secondary">
+                      {formatShortTime(item.time)}
+                    </Typography>
+
+                    <Typography fontWeight="bold">
+                      {item.temperatureC != null
+                        ? `${item.temperatureC}°`
+                        : "-"}
+                    </Typography>
+
+                    <Typography color="text.secondary">
+                      {item.description}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography color="text.secondary">Ingen data.</Typography>
+            )}
+          </Box>
+        ))}
       </Box>
-    </>
+    </Box>
   );
 }

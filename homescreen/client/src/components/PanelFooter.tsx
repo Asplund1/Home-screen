@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import { formatShortTime, formatSyncTime } from "../lib/format";
+import { formatShortTime, formatSyncTime } from "../library/format";
 
 type PanelFooterProps = {
   error: string | null;

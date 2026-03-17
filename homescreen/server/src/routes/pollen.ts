@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { withCache } from "../lib/cache";
-import { envNumber, envString } from "../lib/env";
-import { buildUrl, fetchJson } from "../lib/http";
+import { withCache } from "../library/cache";
+import { envNumber, envString } from "../library/env";
+import { buildUrl, fetchJson } from "../library/http";
 
 type OpenMeteoAirQualityResponse = {
   latitude: number;

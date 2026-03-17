@@ -1,5 +1,5 @@
 import { Typography, Box } from "@mui/material";
-import { formatClock } from "../lib/format";
+import { formatClock } from "../library/format";
 
 type ClockSectionProps = {
   now: Date;
