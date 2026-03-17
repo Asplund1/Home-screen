@@ -1,9 +1,8 @@
 import { PanelFooter } from "../components/PanelFooter";
-import { PanelFrame } from "../components/PanelFrame";
 import { GlucosePanel } from "../components/GlucosePanel";
 import { EmptyState } from "../components/EmptyState";
-import { getStatusLabel } from "../lib/format";
 import type { GlucoseData, ResourceState } from "../types/dashboard";
+import { Box } from "@mui/material";
 
 type GlucoseSectionProps = {
   state: ResourceState<GlucoseData>;
@@ -34,28 +33,27 @@ export function GlucoseSection({ state }: GlucoseSectionProps) {
   };
 
   return (
-    <PanelFrame
-      className="panel-glucose"
-      eyebrow="Nightscout"
-      title="Glukos"
-      status={getStatusLabel(data?.status, error)}
-      footer={
-        <PanelFooter
-          error={error}
-          lastLoadedAt={lastLoadedAt}
-          updatedAt={data?.updatedAt}
-        />
-      }
-      sx={getBackgroundSx(glucoseLevel)}
+    <Box
+      sx={{
+        p: 3,
+        borderRadius: "1.6rem",
+        ...getBackgroundSx(glucoseLevel),
+      }}
     >
       <GlucosePanel
         data={data ?? null}
         onEmpty={
           <EmptyState
-            label={data?.message ?? error ?? "Nightscout ar inte konfigurerat."}
+            label={data?.message ?? error ?? "Nightscout är inte konfigurerat."}
           />
         }
       />
-    </PanelFrame>
+
+      <PanelFooter
+        error={error}
+        lastLoadedAt={lastLoadedAt}
+        updatedAt={data?.updatedAt}
+      />
+    </Box>
   );
 }

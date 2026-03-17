@@ -1,9 +1,9 @@
 import { PanelFooter } from "../components/PanelFooter";
-import { PanelFrame } from "../components/PanelFrame";
 import { EmptyState } from "../components/EmptyState";
 import { WeatherPanel } from "../components/WeatherPanel";
-import { getStatusLabel } from "../lib/format";
+
 import type { ResourceState, WeatherData } from "../types/dashboard";
+import { Box } from "@mui/material";
 
 type WeatherSectionProps = {
   state: ResourceState<WeatherData>;
@@ -30,25 +30,19 @@ export function WeatherSection({ state }: WeatherSectionProps) {
       .slice(0, 4) ?? [];
 
   return (
-    <PanelFrame
-      className="panel-weather"
-      eyebrow="SMHI vader"
-      title={data?.location ?? "Linkoping"}
-      status={getStatusLabel(data?.status, error)}
-      footer={
-        <PanelFooter
-          error={error}
-          lastLoadedAt={lastLoadedAt}
-          updatedAt={data?.updatedAt}
-        />
-      }
-    >
+    <Box>
+      <PanelFooter
+        error={error}
+        lastLoadedAt={lastLoadedAt}
+        updatedAt={data?.updatedAt}
+      />
+
       <WeatherPanel
         data={data ?? null}
         todayForecast={todayForecast}
         tomorrowForecast={tomorrowForecast}
-        onEmpty={<EmptyState label={error ?? "Hamtar vaderdata..."} />}
+        onEmpty={<EmptyState label={error ?? "Hämtar väderdata..."} />}
       />
-    </PanelFrame>
+    </Box>
   );
 }

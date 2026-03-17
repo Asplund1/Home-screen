@@ -35,12 +35,7 @@ export function WeatherPanel({
             sx={{
               display: "flex",
               alignItems: "baseline",
-              gap: "0.35rem",
-              lineHeight: 0.9,
-              letterSpacing: "-0.05em",
               fontSize: { xs: "4rem", md: "6rem" },
-              fontFamily:
-                '"Avenir Next", "Segoe UI Semibold", "Trebuchet MS", sans-serif',
             }}
           >
             {data.current.temperatureC != null

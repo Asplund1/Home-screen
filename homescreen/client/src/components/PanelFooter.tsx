@@ -14,22 +14,19 @@ export function PanelFooter(props: PanelFooterProps) {
       sx={{
         display: "flex",
         justifyContent: "space-between",
-        gap: 1.5,
-        paddingTop: "0.25rem",
-        borderTop: "1px solid rgba(16, 35, 29, 0.08)",
       }}
     >
-      <Typography sx={{ fontSize: "0.88rem" }}>
+      <Typography sx={{ fontSize: "1rem" }}>
         {props.error
           ? `Fel: ${props.error}`
           : props.updatedAt
-            ? `Kalla ${formatShortTime(props.updatedAt)}`
-            : "Vantar pa data"}
+            ? `Senast uppdaterad ${formatShortTime(props.updatedAt)}`
+            : "Vantar på data"}
       </Typography>
-      <Typography sx={{ fontSize: "0.88rem" }}>
+      <Typography sx={{ fontSize: "1rem" }}>
         {props.lastLoadedAt
           ? `Synkad ${formatSyncTime(props.lastLoadedAt)}`
-          : "Ingen synk annu"}
+          : "Väntar på synk"}
       </Typography>
     </Box>
   );

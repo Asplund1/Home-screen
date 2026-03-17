@@ -28,17 +28,32 @@ export default function App() {
   );
 
   return (
-    <Box sx={{ display: "grid" }}>
-      <Box sx={{}}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 2,
+        alignItems: "stretch",
+        height: "100%",
+      }}
+    >
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+        }}
+      >
         <WeatherSection state={weatherState} />
-      </Box>
-      <Box sx={{}}>
-        <GlucoseSection state={glucoseState} />
-      </Box>
-      <Box sx={{}}>
         <PollenSection state={pollenState} />
       </Box>
-      <Box sx={{}}>
+
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+        }}
+      >
+        <GlucoseSection state={glucoseState} />
         <ClockSection now={now} />
       </Box>
     </Box>
