@@ -8,7 +8,6 @@ Dashboard for Raspberry Pi, byggd i React och Express.
 - Glukos fran Nightscout
 - Pollenprognos fran Google Pollen API
 
-
 ## Struktur
 
 - `homescreen/client` innehåller React-klienten
@@ -29,9 +28,9 @@ Klienten proxar `/api` till `http://localhost:8080`.
 1. Bygg klienten i `homescreen/client` med `npm run build`
 2. Bygg servern i `homescreen/server` med `npm run build`
 3. Starta backend i `homescreen/server` med `npm run start`
-4. Oppna `http://<din-pi>:8080`
+4. Öppna `http://<din-pi>:8080`
 
-Nar klienten ar byggd serveras `homescreen/client/dist` automatiskt av Express.
+När klienten är byggd serveras `homescreen/client/dist` automatiskt av Express.
 
 ## Konfiguration
 
