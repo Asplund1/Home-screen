@@ -4,8 +4,8 @@ import type { WeatherData } from "../types/dashboard";
 
 type WeatherPanelProps = {
   data: WeatherData | null;
-  todayForecast: any[];
-  tomorrowForecast: any[];
+  todayForecast: WeatherData["hourly"];
+  tomorrowForecast: WeatherData["hourly"];
   onEmpty: React.ReactNode;
 };
 
