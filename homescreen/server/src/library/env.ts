@@ -53,8 +53,7 @@ export function loadLocalEnv(): void {
   }
 }
 
-export function envString(key: string, fallback?: string): string | undefined {
-  // Alla env hjälpare säkerställer först att .env-filer är inlästa.
+export function envString(key: string, fallback = ""): string {
   loadLocalEnv();
   return process.env[key] ?? fallback;
 }

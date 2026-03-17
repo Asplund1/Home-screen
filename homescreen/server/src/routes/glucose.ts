@@ -190,6 +190,7 @@ function createConfigMissingGlucose(): GlucoseResponse {
     message: "Lagg till NIGHTSCOUT_URL for att visa dina glukosvarden.",
     note: null,
     reading: null,
+    history: [],
     source: "mock",
     status: "config_missing",
     updatedAt: new Date().toISOString(),
