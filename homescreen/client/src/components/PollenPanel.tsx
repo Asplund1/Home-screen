@@ -10,11 +10,6 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
   if (!data) {
     return onEmpty;
   }
-  const topPollen = data.types[0];
-
-  const summaryText = topPollen
-    ? `${topPollen.description}`
-    : "Ingen polleninformation tillgänglig just nu.";
 
   return (
     <Box>
@@ -22,9 +17,54 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
         Pollenstatus
       </Typography>
 
-      <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
-        {summaryText}
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 1,
+          mb: 2,
+        }}
+      >
+        {[
+          { label: "0–20", text: "Väldigt lågt", color: "#4caf50" },
+          { label: "20–80", text: "Lågt", color: "#ffb300" },
+          { label: "80–150", text: "Måttligt", color: "#f57c00" },
+          { label: "150–300", text: "Mycket högt", color: "#d32f2f" },
+        ].map((level) => (
+          <Box
+            key={level.label}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              px: 1.25,
+              py: 0.75,
+              borderRadius: 999,
+              backgroundColor: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                backgroundColor: level.color,
+                flexShrink: 0,
+              }}
+            />
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Box
+                component="span"
+                sx={{ fontWeight: 700, color: "text.primary" }}
+              >
+                {level.label}
+              </Box>{" "}
+              {level.text}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
 
       <Box
         sx={{
@@ -45,6 +85,7 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
+              alignItems: "flex-start",
             }}
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>

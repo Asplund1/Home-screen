@@ -1,4 +1,5 @@
 import { Box, Typography } from "@mui/material";
+import { Icon } from "@iconify/react";
 import { formatShortTime } from "../library/format";
 import type { WeatherData } from "../types/dashboard";
 
@@ -97,10 +98,18 @@ export function WeatherPanel({
           }}
         >
           <Box sx={sunCardStyles}>
-            <Typography variant="caption" color="text.secondary">
-              Soluppgång
-            </Typography>
-            <Typography sx={{ fontWeight: 700, mt: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Icon
+                icon="mdi:weather-sunset-up"
+                width={18}
+                style={{ color: "#f5b942" }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                Soluppgång
+              </Typography>
+            </Box>
+
+            <Typography sx={{ fontWeight: 700, mt: 0.75 }}>
               {data.current.sunrise
                 ? formatShortTime(data.current.sunrise)
                 : "-"}
@@ -108,10 +117,18 @@ export function WeatherPanel({
           </Box>
 
           <Box sx={sunCardStyles}>
-            <Typography variant="caption" color="text.secondary">
-              Solnedgång
-            </Typography>
-            <Typography sx={{ fontWeight: 700, mt: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Icon
+                icon="mdi:weather-sunset-down"
+                width={18}
+                style={{ color: "#f5b942" }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                Solnedgång
+              </Typography>
+            </Box>
+
+            <Typography sx={{ fontWeight: 700, mt: 0.75 }}>
               {data.current.sunset ? formatShortTime(data.current.sunset) : "-"}
             </Typography>
           </Box>

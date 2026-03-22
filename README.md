@@ -1,18 +1,18 @@
 # Home-screen
 
-Dashboard for Raspberry Pi, byggd i React och Express.
+Dashboard för Raspberry Pi, byggd i React och Express.
 
 ## Vad appen visar nu
 
-- Vader fran SMHI
-- Glukos fran Nightscout
-- Pollenprognos fran Google Pollen API
+- Väder från SMHI
+- Glukos från Nightscout
+- Pollenprognos från open-meteo
 
 ## Struktur
 
 - `homescreen/client` innehåller React-klienten
 - `homescreen/server` innehåller Express-backend och API-integrationer
-- `homescreen/server/.env.example` visar all konfiguration som behovs
+- `homescreen/server/.env.example` visar all konfiguration som behövs
 
 ## Lokal utveckling
 
@@ -23,7 +23,7 @@ Dashboard for Raspberry Pi, byggd i React och Express.
 
 Klienten proxar `/api` till `http://localhost:8080`.
 
-## Produktion pa Raspberry Pi
+## Produktion på Raspberry Pi
 
 1. Bygg klienten i `homescreen/client` med `npm run build`
 2. Bygg servern i `homescreen/server` med `npm run build`
