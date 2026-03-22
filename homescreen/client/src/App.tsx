@@ -13,7 +13,7 @@ const pollenRefreshMs = 60 * 60_000;
 
 // App-komponenten ansvarar nu bara för att koppla ihop hooks och presentera panelerna.
 export default function App() {
-  const now = useTicker(60 * 60 * 1000);
+  const now = useTicker(60000);
   const weatherState = usePollingResource<WeatherData>(
     "/api/weather",
     weatherRefreshMs,
