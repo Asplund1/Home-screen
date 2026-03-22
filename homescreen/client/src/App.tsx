@@ -13,7 +13,7 @@ const pollenRefreshMs = 60 * 60_000;
 
 // App-komponenten ansvarar nu bara för att koppla ihop hooks och presentera panelerna.
 export default function App() {
-  const now = useTicker(1_000);
+  const now = useTicker(60 * 60 * 1000);
   const weatherState = usePollingResource<WeatherData>(
     "/api/weather",
     weatherRefreshMs,
@@ -32,17 +32,57 @@ export default function App() {
       sx={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
+        gridTemplateRows: "1fr 1fr",
         gap: 2,
-        alignItems: "start",
+        minHeight: "100vh",
+        p: 2,
       }}
     >
-      <Box sx={{ display: "grid", gap: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          borderRadius: "1.6rem",
+          minHeight: 0,
+        }}
+      >
         <WeatherSection state={weatherState} />
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          borderRadius: "1.6rem",
+          minHeight: 0,
+        }}
+      >
         <PollenSection state={pollenState} />
       </Box>
 
-      <Box sx={{ display: "grid", gap: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          borderRadius: "1.6rem",
+          minHeight: 0,
+        }}
+      >
         <GlucoseSection state={glucoseState} />
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          borderRadius: "1.6rem",
+          minHeight: 0,
+        }}
+      >
         <ClockSection now={now} />
       </Box>
     </Box>

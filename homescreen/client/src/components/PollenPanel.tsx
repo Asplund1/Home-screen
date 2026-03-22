@@ -6,7 +6,6 @@ type PollenPanelProps = {
   onEmpty: React.ReactNode;
 };
 
-// Pure presentational component för pollendata
 export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
   if (!data) {
     return onEmpty;
@@ -14,12 +13,60 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
 
   return (
     <Box>
-      {data.types.slice(0, 3).map((item) => (
-        <Box key={item.code}>
-          {item.value}
-          <Typography>{item.name}</Typography>
-        </Box>
-      ))}
+      <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
+        Pollenstatus
+      </Typography>
+
+      <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+        {data.summary}
+      </Typography>
+
+      <Box
+        sx={{
+          display: "grid",
+          gap: 1,
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+        }}
+      >
+        {data.types.slice(0, 3).map((item) => (
+          <Box
+            key={item.code}
+            sx={{
+              borderRadius: 2,
+              p: 2,
+              minHeight: 110,
+              border: `1px solid ${item.color ?? "rgba(0,0,0,0.1)"}`,
+              backgroundColor: "background.paper",
+              boxShadow: "0 1px 6px rgba(0, 0, 0, 0.06)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              {item.name}
+            </Typography>
+
+            <Typography
+              variant="h4"
+              sx={{ color: item.color ?? "text.primary", fontWeight: 700 }}
+            >
+              {item.value}
+            </Typography>
+
+            <Typography
+              variant="caption"
+              sx={{ color: item.color ?? "text.primary", fontWeight: 600 }}
+            >
+              {item.category}
+            </Typography>
+
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              {item.description}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
     </Box>
   );
 }
