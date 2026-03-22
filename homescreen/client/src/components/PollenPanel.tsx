@@ -85,28 +85,37 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
-              alignItems: "flex-start",
             }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, ml: 0.5 }}>
               {item.name}
             </Typography>
 
             <Typography
               variant="h4"
-              sx={{ color: item.color ?? "text.primary", fontWeight: 700 }}
+              sx={{
+                color: item.color ?? "text.primary",
+                fontWeight: 700,
+              }}
             >
               {item.value}
             </Typography>
 
             <Typography
               variant="caption"
-              sx={{ color: item.color ?? "text.primary", fontWeight: 600 }}
+              sx={{
+                color: item.color ?? "text.primary",
+                fontWeight: 600,
+                ml: 0.5,
+              }}
             >
               {item.category}
             </Typography>
 
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", ml: 0.5 }}
+            >
               {item.description}
             </Typography>
           </Box>
