@@ -3,19 +3,25 @@ import { withCache } from "../library/cache";
 import { envNumber, envString } from "../library/env";
 import { fetchJson } from "../library/http";
 
-type SmhiParameter = {
-  name: string;
-  values: number[];
-};
-
-type SmhiTimeSeries = {
-  parameters: SmhiParameter[];
-  validTime: string;
-};
-
-type SmhiForecastResponse = {
-  approvedTime: string;
-  timeSeries: SmhiTimeSeries[];
+type OpenMeteoResponse = {
+  current: {
+    temperature_2m?: number;
+    relative_humidity_2m?: number;
+    precipitation?: number;
+    wind_speed_10m?: number;
+    weather_code?: number;
+  };
+  hourly?: {
+    time: string[];
+    temperature_2m?: number[];
+    precipitation?: number[];
+    wind_speed_10m?: number[];
+    weather_code?: number[];
+  };
+  daily?: {
+    sunrise?: string[];
+    sunset?: string[];
+  };
 };
 
 type WeatherResponse = {
@@ -23,6 +29,8 @@ type WeatherResponse = {
     description: string;
     humidity: number | null;
     precipitationMm: number | null;
+    sunrise: string | null;
+    sunset: string | null;
     temperatureC: number | null;
     windKph: number | null;
   };
@@ -35,7 +43,7 @@ type WeatherResponse = {
   }>;
   location: string;
   message: string;
-  source: "mock" | "smhi";
+  source: "mock" | "open-meteo";
   status: "fallback" | "live";
   updatedAt: string;
   fetchedAt: string;
@@ -51,97 +59,73 @@ router.get("/", async (_req, res) => {
     res.json(payload);
   } catch (error) {
     console.error("Weather route failed:", error);
-    res.json(createMockWeather("SMHI kunde inte hämtas just nu."));
+    res.json(createMockWeather("Open-Meteo kunde inte hämtas just nu."));
   }
 });
 
 async function loadWeather(): Promise<WeatherResponse> {
   const latitude = envString("WEATHER_LATITUDE", "58.4108");
   const longitude = envString("WEATHER_LONGITUDE", "15.6214");
-  const location = envString("WEATHER_LOCATION_NAME", "Linköping");
+  const location = envString("WEATHER_LOCATION_NAME", "Linköping") ?? "Linköping";
 
-  const url = `https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/${longitude}/lat/${latitude}/data.json`;
+  const url =
+    "https://api.open-meteo.com/v1/forecast" +
+    `?latitude=${latitude}` +
+    `&longitude=${longitude}` +
+    "&timezone=Europe%2FStockholm" +
+    "&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code" +
+    "&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code" +
+    "&forecast_hours=48" +
+    "&daily=sunrise,sunset";
 
-  const data = await fetchJson<SmhiForecastResponse>(url);
-  const timeSeries = data.timeSeries.slice(0, 48);
-
-  if (timeSeries.length === 0) {
-    throw new Error("SMHI response contained no timeSeries data");
-  }
-
-  const currentPoint = timeSeries[0];
+  const data = await fetchJson<OpenMeteoResponse>(url);
+  const fetchedAt = new Date().toISOString();
 
   return {
-    current: mapWeatherPoint(currentPoint),
-    hourly: timeSeries.map(mapHourlyPoint),
+    current: {
+      description: getWeatherCodeLabel(data.current?.weather_code ?? null),
+      humidity: toMaybeNumber(data.current?.relative_humidity_2m),
+      precipitationMm: toMaybeNumber(data.current?.precipitation),
+      sunrise: data.daily?.sunrise?.[0] ?? null,
+      sunset: data.daily?.sunset?.[0] ?? null,
+      temperatureC: toMaybeNumber(data.current?.temperature_2m),
+      windKph: toMaybeNumber(data.current?.wind_speed_10m),
+    },
+    hourly: mapHourly(data.hourly),
     location,
-    message: "SMHI-prognos för de närmaste timmarna.",
-    source: "smhi",
+    message: "Open-Meteo-prognos för de närmaste timmarna.",
+    source: "open-meteo",
     status: "live",
-    updatedAt: data.approvedTime,
-    fetchedAt: new Date().toISOString(),
+    updatedAt: fetchedAt,
+    fetchedAt,
   };
 }
 
-function mapWeatherPoint(point: SmhiTimeSeries) {
-  const humidity = getParameterValue(point.parameters, "r");
-  const precipitationMm = getParameterValue(point.parameters, "pmean");
-  const temperatureC = getParameterValue(point.parameters, "t");
-  const windMs = getParameterValue(point.parameters, "ws");
-  const symbol = getParameterValue(point.parameters, "Wsymb2");
+function mapHourly(hourly: OpenMeteoResponse["hourly"]): WeatherResponse["hourly"] {
+  if (!hourly?.time?.length) {
+    return [];
+  }
 
-  return {
-    description: getSmhiSymbolLabel(symbol),
-    humidity: toMaybeNumber(humidity),
-    precipitationMm: toMaybeNumber(precipitationMm),
-    temperatureC: toMaybeNumber(temperatureC),
-    windKph: windMs === null ? null : roundValue(windMs * 3.6),
-  };
+  return hourly.time.map((time, index) => ({
+    time,
+    description: getWeatherCodeLabel(hourly.weather_code?.[index] ?? null),
+    precipitationMm: toMaybeNumber(hourly.precipitation?.[index]),
+    temperatureC: toMaybeNumber(hourly.temperature_2m?.[index]),
+    windKph: toMaybeNumber(hourly.wind_speed_10m?.[index]),
+  }));
 }
 
-function mapHourlyPoint(point: SmhiTimeSeries) {
-  const precipitationMm = getParameterValue(point.parameters, "pmean");
-  const temperatureC = getParameterValue(point.parameters, "t");
-  const windMs = getParameterValue(point.parameters, "ws");
-  const symbol = getParameterValue(point.parameters, "Wsymb2");
-
-  return {
-    description: getSmhiSymbolLabel(symbol),
-    precipitationMm: toMaybeNumber(precipitationMm),
-    temperatureC: toMaybeNumber(temperatureC),
-    time: point.validTime,
-    windKph: windMs === null ? null : roundValue(windMs * 3.6),
-  };
-}
-
-function getParameterValue(
-  parameters: SmhiParameter[],
-  name: string,
-): number | null {
-  const match = parameters.find((parameter) => parameter.name === name);
-
-  if (!match || match.values.length === 0) {
+function toMaybeNumber(value: number | undefined): number | null {
+  if (typeof value !== "number" || Number.isNaN(value)) {
     return null;
   }
 
-  return match.values[0];
-}
-
-function toMaybeNumber(value: number | null): number | null {
-  if (value === null) {
-    return null;
-  }
-
-  return roundValue(value);
-}
-
-function roundValue(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
 function createMockWeather(message: string): WeatherResponse {
   const now = Date.now();
-  const location = envString("WEATHER_LOCATION_NAME", "Linköping");
+  const location = envString("WEATHER_LOCATION_NAME", "Linköping") ?? "Linköping";
   const timestamp = new Date().toISOString();
 
   return {
@@ -149,14 +133,16 @@ function createMockWeather(message: string): WeatherResponse {
       description: "Växlande molnighet",
       humidity: 71,
       precipitationMm: 0.2,
+      sunrise: new Date(new Date().setHours(6, 12, 0, 0)).toISOString(),
+      sunset: new Date(new Date().setHours(18, 4, 0, 0)).toISOString(),
       temperatureC: 8,
       windKph: 13,
     },
     hourly: Array.from({ length: 48 }, (_, offset) => ({
+      time: new Date(now + offset * 60 * 60_000).toISOString(),
       description: offset < 12 ? "Lätt molnigt" : "Klart",
       precipitationMm: offset === 2 ? 0.4 : 0,
       temperatureC: 8 - Math.max(0, offset - 1),
-      time: new Date(now + offset * 60 * 60_000).toISOString(),
       windKph: 12 + offset,
     })),
     location,
@@ -168,54 +154,51 @@ function createMockWeather(message: string): WeatherResponse {
   };
 }
 
-function getSmhiSymbolLabel(symbol: number | null): string {
-  if (symbol === null) {
-    return "Okänt väder";
-  }
-
-  switch (symbol) {
-    case 1:
+function getWeatherCodeLabel(code: number | null): string {
+  switch (code) {
+    case 0:
       return "Klart";
+    case 1:
+      return "Mestadels klart";
     case 2:
-      return "Nästan klart";
+      return "Delvis molnigt";
     case 3:
-      return "Växlande molnighet";
-    case 4:
-      return "Halvklart";
-    case 5:
-      return "Molnigt";
-    case 6:
       return "Mulet";
-    case 7:
+    case 45:
+    case 48:
       return "Dimma";
-    case 8:
-    case 9:
-    case 10:
-      return "Lätt regnskur";
-    case 11:
-    case 12:
-      return "Regnskur";
-    case 13:
-    case 14:
-      return "Åskskur";
-    case 15:
-    case 16:
-    case 17:
-      return "Snöskur";
-    case 18:
-    case 19:
-    case 20:
+    case 51:
+    case 53:
+    case 55:
+      return "Duggregn";
+    case 56:
+    case 57:
+      return "Underkylt duggregn";
+    case 61:
+    case 63:
+    case 65:
       return "Regn";
-    case 21:
-    case 22:
-    case 23:
-      return "Åska";
-    case 24:
-    case 25:
-    case 26:
+    case 66:
+    case 67:
+      return "Underkylt regn";
+    case 71:
+    case 73:
+    case 75:
       return "Snö";
-    case 27:
-      return "Blandad nederbörd";
+    case 77:
+      return "Snökorn";
+    case 80:
+    case 81:
+    case 82:
+      return "Regnskur";
+    case 85:
+    case 86:
+      return "Snöby";
+    case 95:
+      return "Åska";
+    case 96:
+    case 99:
+      return "Åska med hagel";
     default:
       return "Okänt väder";
   }

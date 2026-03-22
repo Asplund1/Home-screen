@@ -22,12 +22,29 @@ export function WeatherPanel({
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography sx={{ fontSize: { xs: "4rem", md: "6rem" } }}>
-        {data.current.temperatureC != null ? data.current.temperatureC : "-"}
-        <Typography component="span"> °C</Typography>
-      </Typography>
-
-      <Typography color="text.secondary">{data.current.description}</Typography>
+      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+        <Box>
+          <Typography sx={{ fontSize: { xs: "4rem", md: "6rem" } }}>
+            {data.current.temperatureC != null
+              ? data.current.temperatureC
+              : "-"}
+            <Typography component="span"> °C</Typography>
+          </Typography>
+          <Typography color="text.secondary">
+            {data.current.description}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            Soluppgång:{" "}
+            {data.current.sunrise ? formatShortTime(data.current.sunrise) : "-"}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Solnedgång:{" "}
+            {data.current.sunset ? formatShortTime(data.current.sunset) : "-"}
+          </Typography>
+        </Box>
+      </Box>
 
       <Box
         sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, mt: 3 }}

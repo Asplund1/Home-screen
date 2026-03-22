@@ -14,6 +14,8 @@ export type WeatherData = {
         description: string;
         humidity: number | null;
         precipitationMm: number | null;
+        sunrise: string | null;
+        sunset: string | null;
         temperatureC: number | null;
         windKph: number | null;
     };
@@ -26,7 +28,7 @@ export type WeatherData = {
     }>;
     location: string;
     message: string;
-    source: "mock" | "smhi";
+    source: "mock" | "open-meteo";
     status: ResourceStatus;
     updatedAt: string;
     fetchedAt: string;
