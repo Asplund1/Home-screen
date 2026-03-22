@@ -21,7 +21,6 @@ export function EmptyState(props: EmptyStateProps) {
         padding: 1.5,
         borderRadius: "1.2rem",
         border: "1px solid rgba(16, 35, 29, 0.08)",
-        background: "rgba(255, 255, 255, 0.56)",
       }}
     >
       <LinearProgress

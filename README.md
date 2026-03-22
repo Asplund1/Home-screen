@@ -56,15 +56,6 @@ NIGHTSCOUT_URL=https://din-site.herokuapp.com
 NIGHTSCOUT_TOKEN=din_token
 ```
 
-### Google Pollen API
-
-För riktig pollenprognos:
-
-- sätt `GOOGLE_POLLEN_API_KEY`
-- valfritt `POLLEN_LANGUAGE_CODE=sv`
-
-Om Nightscout eller Google Pollen inte är konfigurerat visas demo- eller setup-data i dashboarden.
-
 ## Verifierat
 
 - `npm run lint` i `homescreen/client`
