@@ -1,33 +1,41 @@
+import { Box } from "@mui/material";
 import { PanelFooter } from "../components/PanelFooter";
 import { EmptyState } from "../components/EmptyState";
 import { WeatherPanel } from "../components/WeatherPanel";
-
 import type { ResourceState, WeatherData } from "../types/dashboard";
-import { Box } from "@mui/material";
 
 type WeatherSectionProps = {
   state: ResourceState<WeatherData>;
 };
 
+function pad(value: number): string {
+  return value.toString().padStart(2, "0");
+}
+
+function getDateKey(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function getItemDateKey(value: string): string {
+  return value.slice(0, 10);
+}
+
 export function WeatherSection({ state }: WeatherSectionProps) {
   const { data, error, lastLoadedAt } = state;
 
-  const pad = (value: number) => value.toString().padStart(2, "0");
-  const dateKey = (date: Date) =>
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-
   const now = new Date();
-  const todayKey = dateKey(now);
-  const tomorrowKey = dateKey(new Date(now.getTime() + 24 * 60 * 60_000));
+  const todayKey = getDateKey(now);
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const tomorrowKey = getDateKey(tomorrow);
 
   const todayForecast =
-    data?.hourly
-      .filter((item) => dateKey(new Date(item.time)) === todayKey)
-      .slice(0, 4) ?? [];
+    data?.hourly.filter((item) => getItemDateKey(item.time) === todayKey) ?? [];
+
   const tomorrowForecast =
-    data?.hourly
-      .filter((item) => dateKey(new Date(item.time)) === tomorrowKey)
-      .slice(0, 4) ?? [];
+    data?.hourly.filter((item) => getItemDateKey(item.time) === tomorrowKey) ??
+    [];
 
   return (
     <Box>

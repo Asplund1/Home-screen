@@ -10,8 +10,10 @@ export function ClockSection({ now }: ClockSectionProps) {
     <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
       <Typography
         sx={{
-          fontSize: { xs: "2.5rem", md: "4.5rem" },
+          fontSize: "6rem",
+          fontWeight: "bold",
           textAlign: "center",
+          pt: 6,
         }}
       >
         {formatClock(now)}
