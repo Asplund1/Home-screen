@@ -74,7 +74,7 @@ export type PollenType = {
 export type PollenData = {
     location: string;
     message: string;
-    source: "google-pollen" | "mock";
+    source: "open-meteo" | "mock";
     status: ResourceStatus;
     summary: string;
     types: PollenType[];
