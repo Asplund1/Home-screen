@@ -10,6 +10,11 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
   if (!data) {
     return onEmpty;
   }
+  const topPollen = data.types[0];
+
+  const summaryText = topPollen
+    ? `${topPollen.description}`
+    : "Ingen polleninformation tillgänglig just nu.";
 
   return (
     <Box>
@@ -18,7 +23,7 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
       </Typography>
 
       <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
-        {data.summary}
+        {summaryText}
       </Typography>
 
       <Box
@@ -35,9 +40,8 @@ export function PollenPanel({ data, onEmpty }: PollenPanelProps) {
               borderRadius: 2,
               p: 2,
               minHeight: 110,
-              border: `1px solid ${item.color ?? "rgba(0,0,0,0.1)"}`,
-              backgroundColor: "background.paper",
-              boxShadow: "0 1px 6px rgba(0, 0, 0, 0.06)",
+              border: `1px solid ${item.color}`,
+              backgroundColor: "black",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",

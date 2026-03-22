@@ -58,21 +58,23 @@ export type GlucoseData = {
     updatedAt: string;
 };
 
+export type PollenType = {
+    category: string;
+    code: string;
+    color: string | null;
+    description: string;
+    inSeason: boolean;
+    name: string;
+    recommendation: string | null;
+    value: number;
+};
+
 export type PollenData = {
     location: string;
     message: string;
     source: "google-pollen" | "mock";
     status: ResourceStatus;
     summary: string;
-    types: Array<{
-        category: string;
-        code: string;
-        color: string;
-        description: string;
-        inSeason: boolean;
-        name: string;
-        recommendation: string | null;
-        value: number;
-    }>;
+    types: PollenType[];
     updatedAt: string;
 };

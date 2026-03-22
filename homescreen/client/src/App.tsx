@@ -45,6 +45,7 @@ export default function App() {
           p: 2,
           borderRadius: "1.6rem",
           minHeight: 0,
+          backgroundColor: "#121e27",
         }}
       >
         <WeatherSection state={weatherState} />
@@ -57,6 +58,7 @@ export default function App() {
           p: 2,
           borderRadius: "1.6rem",
           minHeight: 0,
+          backgroundColor: "#121e27",
         }}
       >
         <PollenSection state={pollenState} />

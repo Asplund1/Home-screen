@@ -7,10 +7,11 @@ type ClockSectionProps = {
 
 export function ClockSection({ now }: ClockSectionProps) {
   return (
-    <Box>
+    <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
       <Typography
         sx={{
           fontSize: { xs: "2.5rem", md: "4.5rem" },
+          textAlign: "center",
         }}
       >
         {formatClock(now)}
