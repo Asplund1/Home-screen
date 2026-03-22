@@ -70,3 +70,43 @@ Om Nightscout eller Google Pollen inte är konfigurerat visas demo- eller setup-
 - `npm run lint` i `homescreen/client`
 - `npm run build` i `homescreen/client`
 - `npm run build` i `homescreen/server`
+
+## Hur allt hänger ihop
+
+Den här appen är en klassisk SPA + API-arkitektur:
+
+1. `homescreen/client` (React)
+   - Renderar användargränssnittet i webbläsaren.
+   - Anropar backend via `/api` för att hämta data (väder, glukos, pollen).
+   - Körs i utveckling på `http://localhost:5173` (standard Vite) som en snabb utvecklingsserver.
+
+2. `homescreen/server` (Express)
+   - Hanterar API-endpoints under `/api` (se `routes/glucose.ts`, `routes/pollen.ts`, `routes/weather.ts`).
+   - Hittar data från externa API:er (SMHI, Nightscout, Google Pollen).
+   - I produktion serverar den dessutom byggda klientfiler från `homescreen/client/dist`.
+   - I utveckling körs den på `http://localhost:8080`.
+
+### Varför köra både server och klient i lokal utveckling
+
+- React-klienten behöver en utvecklingsserver (Vite) för snabb omladdning, HMR och modulbygge.
+- Express-servern behöver API-logiken och hemliga nycklar från `.env` (Nightscout, Google Pollen) och kan inte ersättas av klienten.
+- Klienten använder proxyregler (`/api` → `http://localhost:8080`) för att undvika CORS och simulera samma struktur som i produktion.
+
+### Interaktionen i utveckling
+
+- Öppna klienten i webbläsaren (`localhost:5173`).
+- När klienten gör `fetch('/api/weather')`, proxas det till `http://localhost:8080/api/weather`.
+- Servern hämtar data från externa API:er, cacher det (om konfigurerat), och returnerar JSON.
+- Klienten visar data i `GlucoseChart`, `WeatherPanel`, `PollenPanel` osv.
+
+### Interaktionen i produktion (Raspberry Pi)
+
+- Klienten byggs (`npm run build`) och resultatet (`dist`) läggs i `homescreen/client/dist`.
+- Servern byggs och startas (`npm run start`). Den serverar frontenden statiskt och API:erna på samma domän.
+- Användaren besöker `http://<din-pi>:8080` och hela appen (UI + API) körs via samma origin.
+
+Genom att ha denna separation får du:
+
+- snabb utveckling (Vite HMR) + säkra serveranrop i dev
+- tydlig ansvarsfördelning (UI vs. dataaggregation)
+- smidig produktionsdistribution (Express hanterar både frontend + backend)
