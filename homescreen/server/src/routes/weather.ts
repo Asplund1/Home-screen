@@ -4,7 +4,7 @@ import { envNumber, envString } from "../library/env";
 import { fetchJson } from "../library/http";
 
 type OpenMeteoResponse = {
-  current: {
+  current?: {
     temperature_2m?: number;
     relative_humidity_2m?: number;
     precipitation?: number;
@@ -73,6 +73,7 @@ async function loadWeather(): Promise<WeatherResponse> {
     `?latitude=${latitude}` +
     `&longitude=${longitude}` +
     "&timezone=Europe%2FStockholm" +
+    "&timeformat=iso8601" +
     "&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code" +
     "&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code" +
     "&forecast_hours=48" +
