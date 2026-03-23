@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { withCache } from "../library/cache";
-import { envNumber, envString } from "../library/env";
-import { buildUrl, fetchJson } from "../library/http";
+import { rateLimit } from "express-rate-limit";
+import { envString } from "../library/env";
+import { fetchJson } from "../library/http";
 
 type NightscoutEntry = {
   created_at?: string;
@@ -9,7 +9,6 @@ type NightscoutEntry = {
   dateString?: string;
   delta?: number;
   direction?: string;
-  device?: string;
   sgv?: number;
 };
 
@@ -19,43 +18,95 @@ type GlucoseHistoryPoint = {
   valueMmol: number;
 };
 
+type GlucoseReading = {
+  ageMinutes: number;
+  deltaMgdl: number | null;
+  deltaMmol: number | null;
+  measuredAt: string;
+  status: "high" | "low" | "normal";
+  trendArrow: string;
+  trendLabel: string;
+  valueMgdl: number;
+  valueMmol: number;
+};
+
 type GlucoseResponse = {
   message: string;
   note: string | null;
-  reading: {
-    ageMinutes: number;
-    deltaMgdl: number | null;
-    deltaMmol: number | null;
-    measuredAt: string;
-    status: "high" | "low" | "normal";
-    trendArrow: string;
-    trendLabel: string;
-    valueMgdl: number;
-    valueMmol: number;
-  } | null;
+  reading: GlucoseReading | null;
   history: GlucoseHistoryPoint[];
-  source: "mock" | "nightscout";
-  status: "config_missing" | "fallback" | "live";
+  source: "nightscout" | null;
+  status: "config_missing" | "live" | "unavailable";
   updatedAt: string;
+};
+
+type NormalizedNightscoutEntry = {
+  deltaMgdl: number | null;
+  direction?: string;
+  measuredAt: string;
+  measuredTimestamp: number;
+  valueMgdl: number;
 };
 
 const router = Router();
 
-router.get("/", async (_req, res) => {
-  try {
-    // se över chache_ms 
-    const cacheMs = envNumber("GLUCOSE_CACHE_MS", 60_000);
-    const payload = await withCache("glucose", cacheMs, loadGlucose);
+const DAY_MS = 24 * 60 * 60_000;
+const HARD_TTL_MS = 5 * 60_000;
+const LOW_THRESHOLD_MGDL = 70;
+const HIGH_THRESHOLD_MGDL = 180;
+const STALE_MINUTES = 15;
+const MAX_HISTORY_POINTS = 500;
 
+let cachedPayload: GlucoseResponse | null = null;
+let cacheExpiresAt = 0;
+let inFlightRequest: Promise<GlucoseResponse> | null = null;
+
+const glucoseLimiter = rateLimit({
+  windowMs: 5 * 60_000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.get("/", glucoseLimiter, async (_req, res) => {
+  try {
+    const payload = await loadGlucoseWithHardCache();
+
+    res.set("Cache-Control", "private, max-age=300");
     res.json(payload);
   } catch (error) {
     console.error("Glucose route failed:", error);
 
+    res.set("Cache-Control", "private, max-age=60");
     res.json(
-      createMockGlucose("Nightscout kunde inte hämtas just nu."),
+      createUnavailableGlucose("Nightscout kunde inte hämtas just nu."),
     );
   }
 });
+
+async function loadGlucoseWithHardCache(): Promise<GlucoseResponse> {
+  const now = Date.now();
+
+  if (cachedPayload && now < cacheExpiresAt) {
+    return cachedPayload;
+  }
+
+  if (inFlightRequest) {
+    return inFlightRequest;
+  }
+
+  inFlightRequest = loadGlucose()
+    .then((payload) => {
+      cachedPayload = payload;
+      cacheExpiresAt = Date.now() + HARD_TTL_MS;
+      return payload;
+    })
+    .finally(() => {
+      inFlightRequest = null;
+    });
+
+  return inFlightRequest;
+}
 
 async function loadGlucose(): Promise<GlucoseResponse> {
   const siteUrl = envString("NIGHTSCOUT_URL");
@@ -64,116 +115,148 @@ async function loadGlucose(): Promise<GlucoseResponse> {
     return createConfigMissingGlucose();
   }
 
-  const apiBase = getNightscoutApiBase(siteUrl);
-
+  const url = createNightscoutEntriesUrl(siteUrl);
   const readToken = envString("NIGHTSCOUT_READ_TOKEN");
-
-  const count = 288;
-
-  const url = buildUrl(`${apiBase}/entries.json`, { count });
-
-  const headers = readToken
-    ? {
-      Authorization: `Bearer ${readToken}`,
-    }
-    : undefined;
+  const headers = getNightscoutHeaders(readToken);
 
   const entries = await fetchJson<NightscoutEntry[]>(url, { headers });
+  const normalizedEntries = normalizeEntries(entries);
 
-  const latestEntry = entries[0];
-  const previousEntry = entries[1];
-
-  if (!latestEntry || typeof latestEntry.sgv !== "number") {
-    return createMockGlucose(
-      "Nightscout svarade, men ingen giltig glukospost hittades.",
+  if (!normalizedEntries.length) {
+    return createUnavailableGlucose(
+      "Nightscout svarade, men inga giltiga glukosvärden hittades.",
     );
   }
 
-  const measuredAt = getMeasuredAt(latestEntry);
-  const measuredTimestamp = Date.parse(measuredAt);
-
-  const ageMinutes = Number.isNaN(measuredTimestamp)
-    ? 0
-    : Math.max(0, Math.round((Date.now() - measuredTimestamp) / 60_000));
-
-  const valueMgdl = latestEntry.sgv;
+  const latestEntry = normalizedEntries[normalizedEntries.length - 1];
+  const previousEntry = normalizedEntries[normalizedEntries.length - 2];
   const deltaMgdl = getDeltaMgdl(latestEntry, previousEntry);
-  const trendMeta = getNightscoutTrend(latestEntry.direction);
-
-  const history = entries
-    .filter((entry): entry is NightscoutEntry & { sgv: number } => {
-      return typeof entry.sgv === "number";
-    })
-    .map((entry) => ({
-      measuredAt: getMeasuredAt(entry),
-      valueMgdl: entry.sgv,
-      valueMmol: mgdlToMmol(entry.sgv),
-    }))
-    .sort((a, b) => Date.parse(a.measuredAt) - Date.parse(b.measuredAt));
+  const ageMinutes = getAgeMinutes(latestEntry.measuredTimestamp);
+  const trend = getNightscoutTrend(latestEntry.direction);
 
   return {
-    message: "Nightscout-data hämtas från din egen site.",
+    message: "Glukosdata hämtas från Nightscout.",
     note:
-      ageMinutes >= 15
-        ? "Senaste värdet är lite gammalt. Kontrollera att Nightscout uppdateras korrekt."
+      ageMinutes >= STALE_MINUTES
+        ? "Senaste värdet är äldre än väntat. Kontrollera att Nightscout uppdateras korrekt."
         : null,
     reading: {
       ageMinutes,
       deltaMgdl,
       deltaMmol: deltaMgdl === null ? null : mgdlToMmol(deltaMgdl),
-      measuredAt,
-      status: getGlucoseStatus(valueMgdl),
-      trendArrow: trendMeta.arrow,
-      trendLabel: trendMeta.label,
-      valueMgdl,
-      valueMmol: mgdlToMmol(valueMgdl),
+      measuredAt: latestEntry.measuredAt,
+      status: getGlucoseStatus(latestEntry.valueMgdl),
+      trendArrow: trend.arrow,
+      trendLabel: trend.label,
+      valueMgdl: latestEntry.valueMgdl,
+      valueMmol: mgdlToMmol(latestEntry.valueMgdl),
     },
-    history,
+    history: normalizedEntries.map((entry) => ({
+      measuredAt: entry.measuredAt,
+      valueMgdl: entry.valueMgdl,
+      valueMmol: mgdlToMmol(entry.valueMgdl),
+    })),
     source: "nightscout",
     status: "live",
     updatedAt: new Date().toISOString(),
   };
 }
 
+function createNightscoutEntriesUrl(siteUrl: string): string {
+  const apiBase = getNightscoutApiBase(siteUrl);
+  const url = new URL(`${apiBase}/entries/sgv`);
+
+  url.searchParams.set(
+    "find[dateString][$gte]",
+    new Date(Date.now() - DAY_MS).toISOString(),
+  );
+  url.searchParams.set("count", String(MAX_HISTORY_POINTS));
+
+  return url.toString();
+}
+
 function getNightscoutApiBase(siteUrl: string): string {
-  // Användaren kan ange antingen site-roten eller /api/v1.
-  // Normaliserat till /api/v1.
   const trimmed = siteUrl.replace(/\/+$/u, "");
   return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
 }
 
-function getMeasuredAt(entry: NightscoutEntry): string {
-  if (entry.dateString) {
-    return entry.dateString;
+function getNightscoutHeaders(
+  readToken?: string,
+): Record<string, string> | undefined {
+  if (!readToken) {
+    return undefined;
   }
 
-  if (entry.created_at) {
-    return entry.created_at;
+  return {
+    Authorization: readToken.startsWith("Bearer ")
+      ? readToken
+      : `Bearer ${readToken}`,
+  };
+}
+
+function normalizeEntries(entries: NightscoutEntry[]): NormalizedNightscoutEntry[] {
+  const byTimestamp = new Map<number, NormalizedNightscoutEntry>();
+
+  for (const entry of entries) {
+    if (typeof entry.sgv !== "number") {
+      continue;
+    }
+
+    const measuredTimestamp = getMeasuredTimestamp(entry);
+
+    if (!Number.isFinite(measuredTimestamp)) {
+      continue;
+    }
+
+    byTimestamp.set(measuredTimestamp, {
+      deltaMgdl: typeof entry.delta === "number" ? entry.delta : null,
+      direction: typeof entry.direction === "string" ? entry.direction : undefined,
+      measuredAt: new Date(measuredTimestamp).toISOString(),
+      measuredTimestamp,
+      valueMgdl: entry.sgv,
+    });
   }
 
-  if (typeof entry.date === "number") {
-    return new Date(entry.date).toISOString();
+  return Array.from(byTimestamp.values()).sort(
+    (a, b) => a.measuredTimestamp - b.measuredTimestamp,
+  );
+}
+
+function getMeasuredTimestamp(entry: NightscoutEntry): number {
+  if (typeof entry.date === "number" && Number.isFinite(entry.date)) {
+    return entry.date > 10_000_000_000 ? entry.date : entry.date * 1000;
   }
 
-  return new Date().toISOString();
+  const dateStringTimestamp = Date.parse(entry.dateString ?? "");
+  if (!Number.isNaN(dateStringTimestamp)) {
+    return dateStringTimestamp;
+  }
+
+  const createdAtTimestamp = Date.parse(entry.created_at ?? "");
+  if (!Number.isNaN(createdAtTimestamp)) {
+    return createdAtTimestamp;
+  }
+
+  return Number.NaN;
 }
 
 function getDeltaMgdl(
-  latest: NightscoutEntry,
-  previous?: NightscoutEntry,
+  latest: NormalizedNightscoutEntry,
+  previous?: NormalizedNightscoutEntry,
 ): number | null {
-  if (typeof latest.delta === "number") {
-    return latest.delta;
+  if (typeof latest.deltaMgdl === "number") {
+    return latest.deltaMgdl;
   }
 
-  if (
-    typeof latest.sgv === "number" &&
-    typeof previous?.sgv === "number"
-  ) {
-    return latest.sgv - previous.sgv;
+  if (previous) {
+    return latest.valueMgdl - previous.valueMgdl;
   }
 
   return null;
+}
+
+function getAgeMinutes(measuredTimestamp: number): number {
+  return Math.max(0, Math.round((Date.now() - measuredTimestamp) / 60_000));
 }
 
 function getNightscoutTrend(direction?: string): {
@@ -201,11 +284,11 @@ function getNightscoutTrend(direction?: string): {
 }
 
 function getGlucoseStatus(valueMgdl: number): "high" | "low" | "normal" {
-  if (valueMgdl < 70) {
+  if (valueMgdl < LOW_THRESHOLD_MGDL) {
     return "low";
   }
 
-  if (valueMgdl > 180) {
+  if (valueMgdl > HIGH_THRESHOLD_MGDL) {
     return "high";
   }
 
@@ -218,50 +301,24 @@ function mgdlToMmol(valueMgdl: number): number {
 
 function createConfigMissingGlucose(): GlucoseResponse {
   return {
-    message: "Lägg till NIGHTSCOUT_URL för att visa dina glukosvärden.",
+    message: "Lägg till NIGHTSCOUT_URL för att visa glukosdata.",
     note: null,
     reading: null,
     history: [],
-    source: "mock",
+    source: null,
     status: "config_missing",
     updatedAt: new Date().toISOString(),
   };
 }
 
-function createMockGlucose(message: string): GlucoseResponse {
-  const now = Date.now();
-
-  const history: GlucoseHistoryPoint[] = Array.from({ length: 24 }).map(
-    (_, index) => {
-      const valueMgdl = Math.round(126 + Math.sin(index / 4) * 15);
-
-      return {
-        measuredAt: new Date(
-          now - (23 - index) * 60 * 60_000,
-        ).toISOString(),
-        valueMgdl,
-        valueMmol: mgdlToMmol(valueMgdl),
-      };
-    },
-  );
-
+function createUnavailableGlucose(message: string): GlucoseResponse {
   return {
     message,
-    note: "Demo-data visas tills Nightscout är kopplat.",
-    reading: {
-      ageMinutes: 4,
-      deltaMgdl: 6,
-      deltaMmol: mgdlToMmol(6),
-      measuredAt: new Date(Date.now() - 4 * 60_000).toISOString(),
-      status: "normal",
-      trendArrow: "→",
-      trendLabel: "Stabil",
-      valueMgdl: 126,
-      valueMmol: mgdlToMmol(126),
-    },
-    history,
-    source: "mock",
-    status: "fallback",
+    note: null,
+    reading: null,
+    history: [],
+    source: null,
+    status: "unavailable",
     updatedAt: new Date().toISOString(),
   };
 }

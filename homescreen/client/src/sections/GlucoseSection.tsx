@@ -17,17 +17,17 @@ export function GlucoseSection({ state }: GlucoseSectionProps) {
       case "high":
         return {
           background:
-            "linear-gradient(180deg, rgba(217, 128, 50, 0.18), rgba(255, 252, 247, 0.84) 30%)",
+            "linear-gradient(180deg, rgba(217, 128, 50, 0.18), rgba(226, 186, 7, 0.88) 30%)",
         };
       case "low":
         return {
           background:
-            "linear-gradient(180deg, rgba(182, 67, 67, 0.18), rgba(255, 252, 247, 0.84) 30%)",
+            "linear-gradient(180deg, rgba(182, 67, 67, 0.18), rgba(148, 54, 16, 0.84) 30%)",
         };
       default:
         return {
           background:
-            "linear-gradient(180deg, rgba(31, 122, 92, 0.18), rgba(255, 252, 247, 0.84) 30%)",
+            "linear-gradient(180deg, rgba(31, 122, 92, 0.18), rgba(51, 77, 28, 0.84) 30%)",
         };
     }
   };

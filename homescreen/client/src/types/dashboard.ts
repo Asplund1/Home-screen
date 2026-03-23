@@ -40,23 +40,25 @@ export type GlucoseHistoryPoint = {
     valueMmol: number;
 };
 
+export type GlucoseReading = {
+    ageMinutes: number;
+    deltaMgdl: number | null;
+    deltaMmol: number | null;
+    measuredAt: string;
+    status: "high" | "low" | "normal";
+    trendArrow: string;
+    trendLabel: string;
+    valueMgdl: number;
+    valueMmol: number;
+};
+
 export type GlucoseData = {
     message: string;
     note: string | null;
-    reading: {
-        ageMinutes: number;
-        deltaMgdl: number | null;
-        deltaMmol: number | null;
-        measuredAt: string;
-        status: "high" | "low" | "normal";
-        trendArrow: string;
-        trendLabel: string;
-        valueMgdl: number;
-        valueMmol: number;
-    } | null;
+    reading: GlucoseReading | null;
     history: GlucoseHistoryPoint[];
-    source: "mock" | "nightscout";
-    status: ResourceStatus;
+    source: "nightscout" | null;
+    status: "config_missing" | "live" | "unavailable";
     updatedAt: string;
 };
 

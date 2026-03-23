@@ -3,75 +3,146 @@ import type { GlucoseHistoryPoint } from "../types/dashboard";
 
 type GlucoseChartProps = {
   data: GlucoseHistoryPoint[];
+  updatedAt: string;
 };
 
-export function GlucoseChart({ data }: GlucoseChartProps) {
-  if (!data.length) {
+type ChartPoint = GlucoseHistoryPoint & {
+  timestamp: number;
+};
+
+const WINDOW_MS = 24 * 60 * 60_000;
+const SVG_WIDTH = 360;
+const SVG_HEIGHT = 160;
+const PADDING_X = 12;
+const PADDING_Y = 16;
+
+export function GlucoseChart({ data, updatedAt }: GlucoseChartProps) {
+  const points = toChartPoints(data);
+
+  if (!points.length) {
     return null;
   }
 
-  const points = [...data]
-    .filter((point) => typeof point.valueMmol === "number")
-    .sort((a, b) => Date.parse(a.measuredAt) - Date.parse(b.measuredAt));
+  const latestTimestamp = points[points.length - 1].timestamp;
+  const updatedAtTimestamp = Date.parse(updatedAt);
+
+  const endTimestamp = Number.isNaN(updatedAtTimestamp)
+    ? latestTimestamp
+    : Math.max(updatedAtTimestamp, latestTimestamp);
+
+  const startTimestamp = endTimestamp - WINDOW_MS;
 
   const values = points.map((point) => point.valueMmol);
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
-  const padding = 10;
-  const viewWidth = 300;
-  const viewHeight = 140;
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
 
-  // Keep a bit of space above/below in the graph.
-  const scaleMin = Math.max(0, minValue - 1);
-  const scaleMax = maxValue + 1;
-  const valueRange = Math.max(1, scaleMax - scaleMin);
+  const scaleMin = Math.max(0, Math.floor(rawMin - 1));
+  const scaleMax = Math.max(scaleMin + 6, Math.ceil(rawMax + 1));
+  const valueRange = scaleMax - scaleMin;
 
-  const coordinates = points.map((point, index) => {
-    const x =
-      padding + (index / (points.length - 1)) * (viewWidth - padding * 2);
-    const normalized = (point.valueMmol - scaleMin) / valueRange;
-    const y = viewHeight - padding - normalized * (viewHeight - padding * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
+  const usableWidth = SVG_WIDTH - PADDING_X * 2;
+  const usableHeight = SVG_HEIGHT - PADDING_Y * 2;
 
-  const last = points[points.length - 1];
-  const label = `Senaste (${last.valueMmol.toFixed(1)} mmol/L)`;
+  const getX = (timestamp: number) => {
+    const ratio = (timestamp - startTimestamp) / WINDOW_MS;
+    const clampedRatio = Math.min(1, Math.max(0, ratio));
+    return PADDING_X + clampedRatio * usableWidth;
+  };
+
+  const getY = (value: number) => {
+    const ratio = (value - scaleMin) / valueRange;
+    return PADDING_Y + (1 - ratio) * usableHeight;
+  };
+
+  const polylinePoints = points
+    .map((point) => {
+      const x = getX(point.timestamp);
+      const y = getY(point.valueMmol);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const lastPoint = points[points.length - 1];
+  const lastX = getX(lastPoint.timestamp);
+  const lastY = getY(lastPoint.valueMmol);
+
+  const gridValues = [scaleMin, (scaleMin + scaleMax) / 2, scaleMax];
 
   return (
-    <Box sx={{ display: "grid", gap: "0.4rem" }}>
-      <Typography sx={{ fontSize: "0.95rem", color: "text.secondary" }}>
-        {label}
-      </Typography>
-      <Box
-        component="svg"
-        viewBox={`0 0 ${viewWidth} ${viewHeight}`}
-        preserveAspectRatio="none"
-        sx={{
-          width: "100%",
-          height: "120px",
-          color: "primary.main",
-        }}
-      >
-        <Box
-          component="polyline"
-          points={coordinates.join(" ")}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-        <Box
-          component="line"
-          x1={padding}
-          y1={viewHeight - padding}
-          x2={viewWidth - padding}
-          y2={viewHeight - padding}
-          stroke="currentColor"
-          strokeOpacity={0.2}
-          strokeWidth={1}
-        />
+    <Box sx={{ display: "grid", gap: 1 }}>
+      <Box sx={{ width: "100%", height: 160, color: "primary.main" }}>
+        <svg
+          viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+          preserveAspectRatio="none"
+          width="100%"
+          height="100%"
+          role="img"
+          aria-label="Glukoskurva för senaste dygnet"
+        >
+          {gridValues.map((value) => {
+            const y = getY(value);
+
+            return (
+              <line
+                key={value}
+                x1={PADDING_X}
+                y1={y}
+                x2={SVG_WIDTH - PADDING_X}
+                y2={y}
+                stroke="currentColor"
+                strokeOpacity="0.12"
+                strokeWidth="1"
+              />
+            );
+          })}
+
+          <polyline
+            points={polylinePoints}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+
+          <circle cx={lastX} cy={lastY} r="3.5" fill="currentColor" />
+        </svg>
+      </Box>
+
+      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Typography variant="caption" color="text.secondary">
+          {formatTime(startTimestamp)}
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary">
+          {formatTime(endTimestamp)}
+        </Typography>
       </Box>
     </Box>
   );
+}
+
+function toChartPoints(data: GlucoseHistoryPoint[]): ChartPoint[] {
+  return data
+    .flatMap((point) => {
+      if (typeof point.valueMmol !== "number") {
+        return [];
+      }
+
+      const timestamp = Date.parse(point.measuredAt);
+
+      if (Number.isNaN(timestamp)) {
+        return [];
+      }
+
+      return [{ ...point, timestamp }];
+    })
+    .sort((a, b) => a.timestamp - b.timestamp);
+}
+
+function formatTime(timestamp: number): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
 }
