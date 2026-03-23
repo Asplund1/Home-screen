@@ -41,7 +41,7 @@ export function WeatherPanel({
     return onEmpty;
   }
 
-  const fixedForecastHours = [8, 12, 16, 20];
+  const fixedForecastHours = [8, 12, 16, 20, 22];
 
   const todayFixedForecast = filterForecastByHours(
     todayForecast,
