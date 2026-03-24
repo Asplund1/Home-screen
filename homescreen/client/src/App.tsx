@@ -7,9 +7,9 @@ import { usePollingResource } from "./hooks/usePollingResource";
 import { useTicker } from "./hooks/useTicker";
 import type { GlucoseData, PollenData, WeatherData } from "./types/dashboard";
 
-const weatherRefreshMs = 30 * 60_000;
-const glucoseRefreshMs = 60 * 60_000; // 1 timme
-const pollenRefreshMs = 60 * 60_000;
+const weatherRefreshMs = 10 * 60_000;
+const glucoseRefreshMs = 10 * 60_000; // 10 Minuter
+const pollenRefreshMs = 10 * 60_000;
 
 // App-komponenten ansvarar nu bara för att koppla ihop hooks och presentera panelerna.
 export default function App() {
