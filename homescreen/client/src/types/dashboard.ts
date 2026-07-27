@@ -82,3 +82,18 @@ export type PollenData = {
     types: PollenType[];
     updatedAt: string;
 };
+
+export type SubwayDeparture = {
+  id: string;
+  line: string;
+  destination: string;
+  departureTime: string;
+  platform?: string;
+  state?: string;
+};
+
+export type SubwayData = {
+  station: string;
+  departures: SubwayDeparture[];
+  updatedAt: string;
+};

@@ -3,28 +3,42 @@ import { WeatherSection } from "./sections/WeatherSection";
 import { GlucoseSection } from "./sections/GlucoseSection";
 import { PollenSection } from "./sections/PollenSection";
 import { ClockSection } from "./sections/ClockSection";
+import { SubwaySection } from "./sections/SubwaySection";
 import { usePollingResource } from "./hooks/usePollingResource";
 import { useTicker } from "./hooks/useTicker";
-import type { GlucoseData, PollenData, WeatherData } from "./types/dashboard";
+import type {
+  GlucoseData,
+  PollenData,
+  SubwayData,
+  WeatherData,
+} from "./types/dashboard";
 
 const weatherRefreshMs = 10 * 60_000;
-const glucoseRefreshMs = 10 * 60_000; // 10 Minuter
+const glucoseRefreshMs = 10 * 60_000;
 const pollenRefreshMs = 10 * 60_000;
+const subwayRefreshMs = 30_000;
 
-// App-komponenten ansvarar nu bara för att koppla ihop hooks och presentera panelerna.
 export default function App() {
-  const now = useTicker(60000);
+  const now = useTicker(60_000);
+
   const weatherState = usePollingResource<WeatherData>(
     "/api/weather",
     weatherRefreshMs,
   );
+
   const glucoseState = usePollingResource<GlucoseData>(
     "/api/glucose",
     glucoseRefreshMs,
   );
+
   const pollenState = usePollingResource<PollenData>(
     "/api/pollen",
     pollenRefreshMs,
+  );
+
+  const subwayState = usePollingResource<SubwayData>(
+    "/api/subway",
+    subwayRefreshMs,
   );
 
   return (
@@ -32,7 +46,6 @@ export default function App() {
       sx={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
-        gridTemplateRows: "1fr 1fr",
         gap: 2,
         minHeight: "100vh",
         p: 2,
@@ -86,6 +99,19 @@ export default function App() {
         }}
       >
         <ClockSection now={now} />
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          borderRadius: "1.6rem",
+          minHeight: 0,
+          backgroundColor: "#121e27",
+        }}
+      >
+        <SubwaySection state={subwayState} />
       </Box>
     </Box>
   );

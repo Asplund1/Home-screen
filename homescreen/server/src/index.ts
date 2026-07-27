@@ -6,6 +6,7 @@ import { envNumber, loadLocalEnv } from "./library/env";
 import glucoseRouter from "./routes/glucose";
 import pollenRouter from "./routes/pollen";
 import weatherRouter from "./routes/weather";
+import subwayRouter from "./routes/subway";
 
 // Vi laddar lokala miljövariabler innan resten av servern börjar läsa konfiguration.
 loadLocalEnv();
@@ -27,6 +28,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/weather", weatherRouter);
 app.use("/api/glucose", glucoseRouter);
 app.use("/api/pollen", pollenRouter);
+app.use("/api/subway", subwayRouter);
 
 if (fs.existsSync(clientDistPath)) {
   // I produktion kan backend servera den byggda React-appen direkt från dist-mappen.
