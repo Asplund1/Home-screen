@@ -64,9 +64,9 @@ router.get("/", async (_req, res) => {
 });
 
 async function loadWeather(): Promise<WeatherResponse> {
-  const latitude = envString("WEATHER_LATITUDE", "58.4108");
-  const longitude = envString("WEATHER_LONGITUDE", "15.6214");
-  const location = envString("WEATHER_LOCATION_NAME", "Linköping") ?? "Linköping";
+  const latitude = envString("WEATHER_LATITUDE", "59.3544");
+  const longitude = envString("WEATHER_LONGITUDE", "17.8850");
+  const location = envString("WEATHER_LOCATION_NAME", "Råcksta") ?? "Råcksta";
 
   const url =
     "https://api.open-meteo.com/v1/forecast" +
@@ -126,7 +126,7 @@ function toMaybeNumber(value: number | undefined): number | null {
 
 function createMockWeather(message: string): WeatherResponse {
   const now = Date.now();
-  const location = envString("WEATHER_LOCATION_NAME", "Linköping") ?? "Linköping";
+  const location = envString("WEATHER_LOCATION_NAME", "Råcksta") ?? "Råcksta";
   const timestamp = new Date().toISOString();
 
   return {

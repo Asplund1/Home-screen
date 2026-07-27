@@ -18,6 +18,9 @@ const glucoseRefreshMs = 10 * 60_000;
 const pollenRefreshMs = 10 * 60_000;
 const subwayRefreshMs = 30_000;
 
+// Ändra till true när glukospanelen ska visas igen.
+const showGlucose = false;
+
 export default function App() {
   const now = useTicker(60_000);
 
@@ -29,6 +32,7 @@ export default function App() {
   const glucoseState = usePollingResource<GlucoseData>(
     "/api/glucose",
     glucoseRefreshMs,
+    showGlucose,
   );
 
   const pollenState = usePollingResource<PollenData>(
@@ -51,6 +55,7 @@ export default function App() {
         p: 2,
       }}
     >
+      {/* Överst till vänster */}
       <Box
         sx={{
           display: "flex",
@@ -64,6 +69,34 @@ export default function App() {
         <WeatherSection state={weatherState} />
       </Box>
 
+      {/* Överst till höger */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          borderRadius: "1.6rem",
+          minHeight: 0,
+          backgroundColor: "#121e27",
+        }}
+      >
+        <SubwaySection state={subwayState} />
+      </Box>
+
+      {/* Nederst till vänster */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          borderRadius: "1.6rem",
+          minHeight: 0,
+        }}
+      >
+        <ClockSection now={now} />
+      </Box>
+
+      {/* Nederst till höger */}
       <Box
         sx={{
           display: "flex",
@@ -77,42 +110,20 @@ export default function App() {
         <PollenSection state={pollenState} />
       </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 2,
-          borderRadius: "1.6rem",
-          minHeight: 0,
-        }}
-      >
-        <GlucoseSection state={glucoseState} />
-      </Box>
-
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 2,
-          borderRadius: "1.6rem",
-          minHeight: 0,
-        }}
-      >
-        <ClockSection now={now} />
-      </Box>
-
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 2,
-          borderRadius: "1.6rem",
-          minHeight: 0,
-          backgroundColor: "#121e27",
-        }}
-      >
-        <SubwaySection state={subwayState} />
-      </Box>
+      {/* Koden finns kvar men panelen visas bara när showGlucose är true. */}
+      {showGlucose && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            p: 2,
+            borderRadius: "1.6rem",
+            minHeight: 0,
+          }}
+        >
+          <GlucoseSection state={glucoseState} />
+        </Box>
+      )}
     </Box>
   );
 }
