@@ -34,34 +34,6 @@ export type WeatherData = {
     fetchedAt: string;
 };
 
-export type GlucoseHistoryPoint = {
-    measuredAt: string;
-    valueMgdl: number;
-    valueMmol: number;
-};
-
-export type GlucoseReading = {
-    ageMinutes: number;
-    deltaMgdl: number | null;
-    deltaMmol: number | null;
-    measuredAt: string;
-    status: "high" | "low" | "normal";
-    trendArrow: string;
-    trendLabel: string;
-    valueMgdl: number;
-    valueMmol: number;
-};
-
-export type GlucoseData = {
-    message: string;
-    note: string | null;
-    reading: GlucoseReading | null;
-    history: GlucoseHistoryPoint[];
-    source: "nightscout" | null;
-    status: "config_missing" | "live" | "unavailable";
-    updatedAt: string;
-};
-
 export type PollenType = {
     category: string;
     code: string;

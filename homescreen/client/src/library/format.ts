@@ -53,15 +53,3 @@ export function getStatusLabel(
   }
 }
 
-export function getGlucoseStatusLabel(
-  status: "high" | "low" | "normal",
-): string {
-  switch (status) {
-    case "high":
-      return "Hog";
-    case "low":
-      return "Lag";
-    default:
-      return "Stabil";
-  }
-}

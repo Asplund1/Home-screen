@@ -3,7 +3,6 @@ import path from "path";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import { envNumber, loadLocalEnv } from "./library/env";
-import glucoseRouter from "./routes/glucose";
 import pollenRouter from "./routes/pollen";
 import weatherRouter from "./routes/weather";
 import subwayRouter from "./routes/subway";
@@ -26,7 +25,6 @@ app.get("/api/health", (_req, res) => {
 
 // Varje domän får sin egen router för att hålla backendkoden uppdelad och läsbar.
 app.use("/api/weather", weatherRouter);
-app.use("/api/glucose", glucoseRouter);
 app.use("/api/pollen", pollenRouter);
 app.use("/api/subway", subwayRouter);
 
