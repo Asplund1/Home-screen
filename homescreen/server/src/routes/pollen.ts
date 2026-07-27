@@ -52,10 +52,10 @@ router.get("/", async (_req, res) => {
 });
 
 async function loadPollen(): Promise<PollenResponse> {
-  const latitude = envString("WEATHER_LATITUDE", "58.4108") ?? "58.4108";
-  const longitude = envString("WEATHER_LONGITUDE", "15.6214") ?? "15.6214";
-  const location =
-    envString("WEATHER_LOCATION_NAME", "Linkoping") ?? "Linkoping";
+ const latitude = envString("POLLEN_LATITUDE", "59.3544");
+const longitude = envString("POLLEN_LONGITUDE", "17.8850");
+const location =
+  envString("POLLEN_LOCATION_NAME", "Råcksta") ?? "Råcksta";
   const timezone =
     envString("POLLEN_TIMEZONE", "Europe/Stockholm") ?? "Europe/Stockholm";
 
