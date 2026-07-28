@@ -38,8 +38,13 @@ type PollenResponse = {
 };
 
 const router = Router();
+const isPollenEnabled = false;
 
 router.get("/", async (_req, res) => {
+  if (!isPollenEnabled) {
+    res.json(createMockPollen("Pollenfunktionen är avstängd tills vidare."));
+    return;
+  }
   try {
     // Pollenprognosen ändras relativt långsamt, så vi cachar den en stund.
     const cacheMs = envNumber("POLLEN_CACHE_MS", 60 * 60_000);

@@ -14,6 +14,7 @@ import type {
 const weatherRefreshMs = 10 * 60_000;
 const pollenRefreshMs = 10 * 60_000;
 const subwayRefreshMs = 30_000;
+const isPollenEnabled = false;
 
 export default function App() {
   const now = useTicker(60_000);
@@ -24,7 +25,7 @@ export default function App() {
   );
 
   const pollenState = usePollingResource<PollenData>(
-    "/api/pollen",
+    isPollenEnabled ? "/api/pollen" : "",
     pollenRefreshMs,
   );
 
@@ -37,10 +38,14 @@ export default function App() {
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 2,
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gridTemplateRows: "repeat(2, minmax(0, 1fr))",
+        gap: 1.25,
         minHeight: "100vh",
-        p: 2,
+        height: "100vh",
+        overflow: "hidden",
+        p: 1.25,
+        bgcolor: "#0b1116",
       }}
     >
       {/* Överst till vänster */}
@@ -76,27 +81,30 @@ export default function App() {
         sx={{
           display: "flex",
           flexDirection: "column",
-          p: 2,
-          borderRadius: "1.6rem",
+          p: 1.25,
+          borderRadius: "1.2rem",
           minHeight: 0,
+          overflow: "hidden",
         }}
       >
         <ClockSection now={now} />
       </Box>
 
       {/* Nederst till höger */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 2,
-          borderRadius: "1.6rem",
-          minHeight: 0,
-          backgroundColor: "#121e27",
-        }}
-      >
-        <PollenSection state={pollenState} />
-      </Box>
+      {isPollenEnabled && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            p: 2,
+            borderRadius: "1.6rem",
+            minHeight: 0,
+            backgroundColor: "#121e27",
+          }}
+        >
+          <PollenSection state={pollenState} />
+        </Box>
+      )}
     </Box>
   );
 }

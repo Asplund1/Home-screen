@@ -13,7 +13,6 @@ export function ClockSection({ now }: ClockSectionProps) {
           fontSize: "6rem",
           fontWeight: "bold",
           textAlign: "center",
-          pt: 6,
         }}
       >
         {formatClock(now)}
