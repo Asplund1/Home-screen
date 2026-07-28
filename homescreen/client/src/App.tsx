@@ -39,13 +39,14 @@ export default function App() {
       sx={{
         display: "grid",
         gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-        gridTemplateRows: "repeat(2, minmax(0, 1fr))",
+        gridTemplateRows: "auto auto",
         gap: 1.25,
         minHeight: "100vh",
         height: "100vh",
         overflow: "hidden",
         p: 1.25,
         bgcolor: "#0b1116",
+        alignItems: "start",
       }}
     >
       {/* Överst till vänster */}
@@ -55,6 +56,7 @@ export default function App() {
           flexDirection: "column",
           p: 2,
           borderRadius: "1.6rem",
+          height: "100%",
           minHeight: 0,
           backgroundColor: "#121e27",
         }}
@@ -69,6 +71,7 @@ export default function App() {
           flexDirection: "column",
           p: 2,
           borderRadius: "1.6rem",
+          alignSelf: "start",
           minHeight: 0,
           backgroundColor: "#121e27",
         }}
@@ -85,6 +88,8 @@ export default function App() {
           borderRadius: "1.2rem",
           minHeight: 0,
           overflow: "hidden",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
         <ClockSection now={now} />

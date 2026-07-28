@@ -17,21 +17,28 @@ export function SubwaySection({
   const { data, error, lastLoadedAt } = state;
 
   return (
-    <Box>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <PanelFooter
         error={error}
         lastLoadedAt={lastLoadedAt}
         updatedAt={data?.updatedAt}
       />
 
-      <SubwayPanel
-        data={data}
-        onEmpty={
-          <EmptyState
-            label={error ?? "Hämtar tunnelbaneavgångar..."}
-          />
-        }
-      />
+      <Box>
+        <SubwayPanel
+          data={data}
+          onEmpty={
+            <EmptyState
+              label={error ?? "Hämtar tunnelbaneavgångar..."}
+            />
+          }
+        />
+      </Box>
     </Box>
   );
 }

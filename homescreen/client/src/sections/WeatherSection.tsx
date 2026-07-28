@@ -38,19 +38,28 @@ export function WeatherSection({ state }: WeatherSectionProps) {
     [];
 
   return (
-    <Box>
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+
+      }}
+    >
       <PanelFooter
         error={error}
         lastLoadedAt={lastLoadedAt}
         updatedAt={data?.updatedAt}
       />
 
-      <WeatherPanel
-        data={data ?? null}
-        todayForecast={todayForecast}
-        tomorrowForecast={tomorrowForecast}
-        onEmpty={<EmptyState label={error ?? "Hämtar väderdata..."} />}
-      />
+      <Box>
+        <WeatherPanel
+          data={data ?? null}
+          todayForecast={todayForecast}
+          tomorrowForecast={tomorrowForecast}
+          onEmpty={<EmptyState label={error ?? "Hämtar väderdata..."} />}
+        />
+      </Box>
     </Box>
   );
 }

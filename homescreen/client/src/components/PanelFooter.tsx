@@ -21,7 +21,7 @@ export function PanelFooter(props: PanelFooterProps) {
           ? `Fel: ${props.error}`
           : props.updatedAt
             ? `Senast uppdaterad ${formatShortTime(props.updatedAt)}`
-            : "Vantar på data"}
+            : "Väntar på data"}
       </Typography>
       <Typography sx={{ fontSize: "1rem" }}>
         {props.lastLoadedAt
