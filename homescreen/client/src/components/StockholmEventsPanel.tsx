@@ -104,7 +104,7 @@ export function StockholmEventsPanel({
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns: "4.4rem minmax(0, 1fr)",
+                      gridTemplateColumns: "5.8rem minmax(0, 1fr)",
                       gap: 0.65,
                       alignItems: "center",
                       minWidth: 0,
