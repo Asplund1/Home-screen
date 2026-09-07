@@ -1,20 +1,13 @@
 import { Box } from "@mui/material";
 import { WeatherSection } from "./sections/WeatherSection";
-import { PollenSection } from "./sections/PollenSection";
 import { ClockSection } from "./sections/ClockSection";
 import { SubwaySection } from "./sections/SubwaySection";
 import { usePollingResource } from "./hooks/usePollingResource";
 import { useTicker } from "./hooks/useTicker";
-import type {
-  PollenData,
-  SubwayData,
-  WeatherData,
-} from "./types/dashboard";
+import type { SubwayData, WeatherData } from "./types/dashboard";
 
 const weatherRefreshMs = 10 * 60_000;
-const pollenRefreshMs = 10 * 60_000;
 const subwayRefreshMs = 30_000;
-const isPollenEnabled = false;
 
 export default function App() {
   const now = useTicker(60_000);
@@ -22,11 +15,6 @@ export default function App() {
   const weatherState = usePollingResource<WeatherData>(
     "/api/weather",
     weatherRefreshMs,
-  );
-
-  const pollenState = usePollingResource<PollenData>(
-    isPollenEnabled ? "/api/pollen" : "",
-    pollenRefreshMs,
   );
 
   const subwayState = usePollingResource<SubwayData>(
@@ -49,7 +37,6 @@ export default function App() {
         alignItems: "start",
       }}
     >
-      {/* Överst till vänster */}
       <Box
         sx={{
           display: "flex",
@@ -64,7 +51,6 @@ export default function App() {
         <WeatherSection state={weatherState} />
       </Box>
 
-      {/* Överst till höger */}
       <Box
         sx={{
           display: "flex",
@@ -79,7 +65,6 @@ export default function App() {
         <SubwaySection state={subwayState} />
       </Box>
 
-      {/* Nederst till vänster */}
       <Box
         sx={{
           display: "flex",
@@ -94,22 +79,6 @@ export default function App() {
       >
         <ClockSection now={now} />
       </Box>
-
-      {/* Nederst till höger */}
-      {isPollenEnabled && (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            p: 2,
-            borderRadius: "1.6rem",
-            minHeight: 0,
-            backgroundColor: "#121e27",
-          }}
-        >
-          <PollenSection state={pollenState} />
-        </Box>
-      )}
     </Box>
   );
 }

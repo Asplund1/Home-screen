@@ -1,6 +1,6 @@
 // Alla typer för API-svaren samlas här så att både App och komponenter använder samma kontrakt.
 
-export type ResourceStatus = "config_missing" | "fallback" | "live";
+export type ResourceStatus = "fallback" | "live";
 
 export type ResourceState<T> = {
     data: T | null;
@@ -32,27 +32,6 @@ export type WeatherData = {
     status: ResourceStatus;
     updatedAt: string;
     fetchedAt: string;
-};
-
-export type PollenType = {
-    category: string;
-    code: string;
-    color: string | null;
-    description: string;
-    inSeason: boolean;
-    name: string;
-    recommendation: string | null;
-    value: number;
-};
-
-export type PollenData = {
-    location: string;
-    message: string;
-    source: "open-meteo" | "mock";
-    status: ResourceStatus;
-    summary: string;
-    types: PollenType[];
-    updatedAt: string;
 };
 
 export type SubwayDeparture = {

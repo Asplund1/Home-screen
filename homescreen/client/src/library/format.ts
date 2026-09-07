@@ -1,5 +1,3 @@
-import type { ResourceStatus } from "../types/dashboard";
-
 // Alla formattering samlat i denna fil.
 
 export function formatClock(date: Date): string {
@@ -31,25 +29,5 @@ export function formatSyncTime(timestamp: number): string {
   }
 
   return `${minutesAgo} min sedan`;
-}
-
-export function getStatusLabel(
-  status: ResourceStatus | undefined,
-  error: string | null,
-): string {
-  if (error) {
-    return "Fel";
-  }
-
-  switch (status) {
-    case "live":
-      return "Live";
-    case "fallback":
-      return "Demo";
-    case "config_missing":
-      return "Setup saknas";
-    default:
-      return "Laddar";
-  }
 }
 
