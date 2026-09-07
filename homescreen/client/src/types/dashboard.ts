@@ -48,3 +48,30 @@ export type SubwayData = {
   departures: SubwayDeparture[];
   updatedAt: string;
 };
+
+export type StockholmEvent = {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  category?: string;
+  description?: string;
+  selectionType: "featured" | "recommended" | "wildcard";
+  url?: string;
+};
+
+export type StockholmEventsData = {
+  events: StockholmEvent[];
+  fetchedAt: string;
+  message: string;
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+  source: "visit-stockholm";
+  status: "live";
+  updatedAt: string;
+};

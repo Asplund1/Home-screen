@@ -2,12 +2,29 @@ import { Box } from "@mui/material";
 import { WeatherSection } from "./sections/WeatherSection";
 import { ClockSection } from "./sections/ClockSection";
 import { SubwaySection } from "./sections/SubwaySection";
+import { StockholmEventsSection } from "./sections/StockholmEventsSection";
 import { usePollingResource } from "./hooks/usePollingResource";
 import { useTicker } from "./hooks/useTicker";
-import type { SubwayData, WeatherData } from "./types/dashboard";
+import type {
+  StockholmEventsData,
+  SubwayData,
+  WeatherData,
+} from "./types/dashboard";
 
 const weatherRefreshMs = 10 * 60_000;
 const subwayRefreshMs = 30_000;
+const stockholmEventsRefreshMs = 30 * 60_000;
+
+const panelSx = {
+  display: "flex",
+  flexDirection: "column",
+  minHeight: 0,
+  height: "100%",
+  overflow: "hidden",
+  p: { xs: 1, md: 1.25 },
+  borderRadius: "1.1rem",
+  backgroundColor: "#121e27",
+} as const;
 
 export default function App() {
   const now = useTicker(60_000);
@@ -22,46 +39,33 @@ export default function App() {
     subwayRefreshMs,
   );
 
+  const stockholmEventsState = usePollingResource<StockholmEventsData>(
+    "/api/stockholm-events",
+    stockholmEventsRefreshMs,
+  );
+
   return (
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-        gridTemplateRows: "auto auto",
-        gap: 1.25,
-        minHeight: "100vh",
-        height: "100vh",
+        gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+        gridTemplateRows: {
+          xs: "repeat(4, minmax(0, 1fr))",
+          md: "repeat(2, minmax(0, 1fr))",
+        },
+        gap: { xs: 0.75, md: 1 },
+        height: "100dvh",
         overflow: "hidden",
-        p: 1.25,
+        p: { xs: 0.75, md: 1 },
         bgcolor: "#0b1116",
-        alignItems: "start",
+        alignItems: "stretch",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 2,
-          borderRadius: "1.6rem",
-          height: "100%",
-          minHeight: 0,
-          backgroundColor: "#121e27",
-        }}
-      >
+      <Box sx={panelSx}>
         <WeatherSection state={weatherState} />
       </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 2,
-          borderRadius: "1.6rem",
-          alignSelf: "start",
-          minHeight: 0,
-          backgroundColor: "#121e27",
-        }}
-      >
+      <Box sx={panelSx}>
         <SubwaySection state={subwayState} />
       </Box>
 
@@ -69,15 +73,20 @@ export default function App() {
         sx={{
           display: "flex",
           flexDirection: "column",
-          p: 1.25,
-          borderRadius: "1.2rem",
           minHeight: 0,
+          height: "100%",
           overflow: "hidden",
+          p: 0.75,
+          borderRadius: "1.1rem",
           justifyContent: "center",
           alignItems: "center",
         }}
       >
         <ClockSection now={now} />
+      </Box>
+
+      <Box sx={panelSx}>
+        <StockholmEventsSection state={stockholmEventsState} />
       </Box>
     </Box>
   );

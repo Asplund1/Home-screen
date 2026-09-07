@@ -5,6 +5,7 @@ import express, { NextFunction, Request, Response } from "express";
 import { envNumber, loadLocalEnv } from "./library/env";
 import weatherRouter from "./routes/weather";
 import subwayRouter from "./routes/subway";
+import stockholmRouter from "./routes/stockholm";
 
 // Vi laddar lokala miljövariabler innan resten av servern börjar läsa konfiguration.
 loadLocalEnv();
@@ -25,6 +26,7 @@ app.get("/api/health", (_req, res) => {
 // Varje domän får sin egen router för att hålla backendkoden uppdelad och läsbar.
 app.use("/api/weather", weatherRouter);
 app.use("/api/subway", subwayRouter);
+app.use("/api/stockholm-events", stockholmRouter);
 
 if (fs.existsSync(clientDistPath)) {
   // I produktion kan backend servera den byggda React-appen direkt från dist-mappen.

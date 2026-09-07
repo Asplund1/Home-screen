@@ -42,7 +42,7 @@ export async function getRackstaSubwayDepartures(): Promise<
         .filter((departure) => departure.line?.transport_mode === "METRO")
         .filter((departure) => departure.state !== "NOTEXPECTED")
         .sort(sortByDepartureTime)
-        .slice(0, 6)
+        .slice(0, 5)
         .map(formatDeparture);
 }
 

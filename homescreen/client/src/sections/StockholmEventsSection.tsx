@@ -1,19 +1,14 @@
 import { Box } from "@mui/material";
 import { EmptyState } from "../components/EmptyState";
 import { PanelFooter } from "../components/PanelFooter";
-import { SubwayPanel } from "../components/SubwayPanel";
-import type {
-  ResourceState,
-  SubwayData,
-} from "../types/dashboard";
+import { StockholmEventsPanel } from "../components/StockholmEventsPanel";
+import type { ResourceState, StockholmEventsData } from "../types/dashboard";
 
-type SubwaySectionProps = {
-  state: ResourceState<SubwayData>;
+type StockholmEventsSectionProps = {
+  state: ResourceState<StockholmEventsData>;
 };
 
-export function SubwaySection({
-  state,
-}: SubwaySectionProps) {
+export function StockholmEventsSection({ state }: StockholmEventsSectionProps) {
   const { data, error, lastLoadedAt } = state;
 
   return (
@@ -40,11 +35,11 @@ export function SubwaySection({
           overflow: "hidden",
         }}
       >
-        <SubwayPanel
+        <StockholmEventsPanel
           data={data}
           onEmpty={
             <EmptyState
-              label={error ?? "Hämtar tunnelbaneavgångar..."}
+              label={error ?? "Hämtar events från Visit Stockholm..."}
             />
           }
         />

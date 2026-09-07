@@ -7,23 +7,32 @@ type PanelFooterProps = {
   updatedAt: string | undefined;
 };
 
-// Footer-raden visar var datan kommer ifran och nar panelen senast synkades.
 export function PanelFooter(props: PanelFooterProps) {
   return (
     <Box
       sx={{
         display: "flex",
         justifyContent: "space-between",
+        gap: 1,
+        flexShrink: 0,
+        minHeight: 18,
       }}
     >
-      <Typography sx={{ fontSize: "1rem" }}>
+      <Typography
+        sx={{
+          fontSize: "0.78rem",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
         {props.error
           ? `Fel: ${props.error}`
           : props.updatedAt
             ? `Senast uppdaterad ${formatShortTime(props.updatedAt)}`
             : "Väntar på data"}
       </Typography>
-      <Typography sx={{ fontSize: "1rem" }}>
+      <Typography sx={{ fontSize: "0.78rem", whiteSpace: "nowrap" }}>
         {props.lastLoadedAt
           ? `Synkad ${formatSyncTime(props.lastLoadedAt)}`
           : "Väntar på synk"}

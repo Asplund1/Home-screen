@@ -1,11 +1,12 @@
 # Home-screen
 
-En dashboard-applikation för Raspberry Pi som visar väder, tunnelbaneavgångar och en digital klocka i ett enkelt gränssnitt. Projektet är uppdelat i en React-klient och en Express-backend.
+En dashboard-applikation för Raspberry Pi som visar väder, tunnelbaneavgångar, aktuella Stockholm-events och en digital klocka i ett enkelt gränssnitt. Projektet är uppdelat i en React-klient och en Express-backend.
 
 ## Vad appen visar
 
 - **Väder**: Aktuellt väder, temperatur, nederbörd, vind och soluppgång/solnedgång från Open-Meteo
 - **Tunnelbana**: Avgångar från SL med destination, spår och avgångstid
+- **Stockholm-events**: Aktuella events den här veckan från Visit Stockholm Open API
 - **Klocka**: Digital klocka som uppdateras varje minut
 
 ## Projektstruktur
@@ -49,7 +50,7 @@ Home-screen/
 ### Backend
 
 - Express med TypeScript
-- Exponerar API-endpoints för väder, tunnelbana och hälsokontroll
+- Exponerar API-endpoints för väder, tunnelbana, Stockholm-events och hälsokontroll
 - Cacherar externa svar för att minska belastning
 - Servar den byggda klienten i produktion om `client/dist` finns
 
@@ -58,6 +59,7 @@ Home-screen/
 - `GET /api/health` - hälsokontroll
 - `GET /api/weather` - väderdata
 - `GET /api/subway` - tunnelbaneavgångar
+- `GET /api/stockholm-events` - events från Visit Stockholm för den här veckan
 
 ## Installation och utveckling
 
@@ -120,6 +122,9 @@ Miljövariablerna finns i `homescreen/server/.env`.
 - `WEATHER_LONGITUDE` - longitud för väderplatsen
 - `WEATHER_LOCATION_NAME` - platsnamn för väderpanelen
 - `WEATHER_CACHE_MS` - cache-tid för väderdata
+- `STOCKHOLM_EVENTS_CACHE_MS` - cache-tid för Visit Stockholm-events
+- `STOCKHOLM_EVENTS_FETCH_SIZE` - antal events att hämta från Visit Stockholm innan lokal filtrering, standard 150
+- `STOCKHOLM_EVENTS_MAX_ITEMS` - max antal events att visa i dashboarden, standard 5 för Touch Display 2
 
 Tunnelbanan är för närvarande hårdkodad till Råcksta station i serverns SL-adapter.
 

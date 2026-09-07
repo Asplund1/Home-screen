@@ -17,15 +17,15 @@ export function EmptyState(props: EmptyStateProps) {
         gap: 1.5,
         alignContent: "center",
         justifyItems: "start",
-        minHeight: "12rem",
-        padding: 1.5,
+        minHeight: "7rem",
+        padding: 1,
         borderRadius: "1.2rem",
         border: "1px solid rgba(16, 35, 29, 0.08)",
       }}
     >
       <LinearProgress
         sx={{
-          width: { xs: "18rem", md: "100%" },
+          width: "100%",
           height: "0.65rem",
           borderRadius: "999px",
           background:

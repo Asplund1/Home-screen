@@ -41,9 +41,11 @@ export function WeatherSection({ state }: WeatherSectionProps) {
     <Box
       sx={{
         width: "100%",
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-
       }}
     >
       <PanelFooter
@@ -52,7 +54,14 @@ export function WeatherSection({ state }: WeatherSectionProps) {
         updatedAt={data?.updatedAt}
       />
 
-      <Box>
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
         <WeatherPanel
           data={data ?? null}
           todayForecast={todayForecast}
