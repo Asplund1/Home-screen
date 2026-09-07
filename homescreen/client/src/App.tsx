@@ -13,7 +13,7 @@ import type {
 
 const weatherRefreshMs = 10 * 60_000;
 const subwayRefreshMs = 30_000;
-const stockholmEventsRefreshMs = 30 * 60_000;
+const stockholmEventsRefreshMs = 3 * 60 * 60_000;
 
 const panelSx = {
   display: "flex",

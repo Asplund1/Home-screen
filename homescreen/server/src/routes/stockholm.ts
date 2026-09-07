@@ -19,7 +19,7 @@ const VISIT_STOCKHOLM_EVENTS_URL =
 
 router.get("/", async (_req, res) => {
   try {
-    const cacheMs = envNumber("STOCKHOLM_EVENTS_CACHE_MS", 30 * 60_000);
+    const cacheMs = envNumber("STOCKHOLM_EVENTS_CACHE_MS", 3 * 60 * 60_000);
     const payload = await withCache("stockholm-events", cacheMs, loadEvents);
 
     res.json(payload);
