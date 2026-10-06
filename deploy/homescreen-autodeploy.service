@@ -1,0 +1,8 @@
+[Unit]
+Description=Home-screen GitHub auto-deploy check
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Home-screen
+ExecStart=/usr/bin/bash %h/Home-screen/deploy/check-and-deploy.sh
