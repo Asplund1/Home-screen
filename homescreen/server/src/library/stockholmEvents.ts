@@ -96,12 +96,12 @@ const majorVenueNames = [
 ];
 
 const popularCategoryScores = new Map<string, number>([
+  ["sports", 45],
   ["clubs-parties", 32],
   ["music", 26],
   ["festivals", 26],
   ["gaming-boardgames", 24],
   ["eat-drink", 22],
-  ["sports", 20],
   ["stage-film", 18],
   ["fairs", 16],
   ["networking-community", 14],
@@ -435,12 +435,18 @@ function getWildcardScore(event: RankedStockholmEvent): number {
 
 function getRelevanceScore(event: RankedStockholmEvent): number {
   const text = `${event.title} ${event.description ?? ""}`;
+  const isSportEvent = event.categorySlugs.includes("sports");
+  const isLargeVenue = isMajorVenue(event.location);
   let score = getDateScore(event.startDate);
   score += getCategoryScore(event.categorySlugs);
   score += getContextualScore(event, text);
 
-  if (isMajorVenue(event.location)) {
+  if (isLargeVenue) {
     score += 30;
+  }
+
+  if (isSportEvent && isLargeVenue) {
+    score += 25;
   }
 
   if (event.hasTime) {
