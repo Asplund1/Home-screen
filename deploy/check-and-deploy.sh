@@ -17,7 +17,7 @@ fi
 
 cd "${REPO_DIR}"
 
-# Vi skriver aldrig över lokala, ospårade kodändringar automatiskt.
+# Vi skriver aldrig över lokala spårade kodändringar automatiskt.
 if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "Auto-deploy avbruten: repot har lokala ändringar."
   exit 1
@@ -51,7 +51,9 @@ if ! git merge-base --is-ancestor "${CURRENT_SHA}" "${REMOTE_SHA}"; then
   exit 1
 fi
 
-OLD_SHA="${CURRENT_SHA}"
+# Jämför dependencies mot senast lyckade deploy, inte bara mot nuvarande HEAD.
+# Då fungerar nästa försök även om en tidigare build hann göra git pull men sedan misslyckades.
+BASE_SHA="${DEPLOYED_SHA}"
 
 echo "Ny version hittad: ${REMOTE_SHA}"
 git pull --ff-only --quiet origin "${BRANCH}"
@@ -66,7 +68,7 @@ install_dependencies_if_needed() {
     return
   fi
 
-  if git diff --quiet "${OLD_SHA}" "${REMOTE_SHA}" -- "${lockfile}"; then
+  if git diff --quiet "${BASE_SHA}" "${REMOTE_SHA}" -- "${lockfile}"; then
     return
   fi
 
