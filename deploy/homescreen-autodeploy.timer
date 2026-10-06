@@ -1,0 +1,12 @@
+[Unit]
+Description=Check GitHub for Home-screen updates every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=15s
+Persistent=true
+Unit=homescreen-autodeploy.service
+
+[Install]
+WantedBy=timers.target
