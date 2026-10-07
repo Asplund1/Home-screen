@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -42,3 +42,25 @@ jobs:
       - name: Build server
         working-directory: homescreen/server
         run: npm run build
+
+      - name: Verify server starts on localhost
+        working-directory: homescreen/server
+        shell: bash
+        run: |
+          npm start > /tmp/homescreen-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          healthy=false
+          for _ in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8080/api/health | grep -q '"ok":true'; then
+              healthy=true
+              break
+            fi
+            sleep 0.5
+          done
+
+          if [ "$healthy" != "true" ]; then
+            cat /tmp/homescreen-server.log
+            exit 1
+          fi
