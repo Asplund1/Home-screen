@@ -43,6 +43,52 @@ jobs:
         working-directory: homescreen/server
         run: npm run build
 
+      - name: Verify persistent cache survives a new process
+        working-directory: homescreen/server
+        shell: bash
+        run: |
+          export CACHE_KEY="ci-persistence-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          node <<'NODE'
+          const { withCache } = require("./dist/library/cache");
+
+          (async () => {
+            const result = await withCache(
+              process.env.CACHE_KEY,
+              0,
+              async () => ({ marker: "real-data" }),
+            );
+
+            if (result.stale || result.value.marker !== "real-data") {
+              throw new Error("Fresh cache write did not return expected data.");
+            }
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+          node <<'NODE'
+          const { withCache } = require("./dist/library/cache");
+
+          (async () => {
+            const result = await withCache(
+              process.env.CACHE_KEY,
+              0,
+              async () => {
+                throw new Error("Simulated external API outage");
+              },
+            );
+
+            if (!result.stale || result.value.marker !== "real-data") {
+              throw new Error("Persistent stale fallback did not survive process restart.");
+            }
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
       - name: Verify server starts on localhost
         working-directory: homescreen/server
         shell: bash
