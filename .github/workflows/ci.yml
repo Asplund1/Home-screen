@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            homescreen/client/package-lock.json
+            homescreen/server/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: homescreen/client
+        run: npm ci
+
+      - name: Lint client
+        working-directory: homescreen/client
+        run: npm run lint
+
+      - name: Build client
+        working-directory: homescreen/client
+        run: npm run build
+
+      - name: Install server dependencies
+        working-directory: homescreen/server
+        run: npm ci
+
+      - name: Build server
+        working-directory: homescreen/server
+        run: npm run build
+
+      - name: Verify persistent cache survives a new process
+        working-directory: homescreen/server
+        shell: bash
+        run: |
+          export CACHE_KEY="ci-persistence-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          node <<'NODE'
+          const { withCache } = require("./dist/library/cache");
+
+          (async () => {
+            const result = await withCache(
+              process.env.CACHE_KEY,
+              0,
+              async () => ({ marker: "real-data" }),
+            );
+
+            if (result.stale || result.value.marker !== "real-data") {
+              throw new Error("Fresh cache write did not return expected data.");
+            }
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+          node <<'NODE'
+          const { withCache } = require("./dist/library/cache");
+
+          (async () => {
+            const result = await withCache(
+              process.env.CACHE_KEY,
+              0,
+              async () => {
+                throw new Error("Simulated external API outage");
+              },
+            );
+
+            if (!result.stale || result.value.marker !== "real-data") {
+              throw new Error("Persistent stale fallback did not survive process restart.");
+            }
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Verify server starts on localhost
+        working-directory: homescreen/server
+        shell: bash
+        run: |
+          npm start > /tmp/homescreen-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          healthy=false
+          for _ in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8080/api/health | grep -q '"ok":true'; then
+              healthy=true
+              break
+            fi
+            sleep 0.5
+          done
+
+          if [ "$healthy" != "true" ]; then
+            cat /tmp/homescreen-server.log
+            exit 1
+          fi

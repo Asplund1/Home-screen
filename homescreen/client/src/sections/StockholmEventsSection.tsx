@@ -24,6 +24,7 @@ export function StockholmEventsSection({ state }: StockholmEventsSectionProps) {
       <PanelFooter
         error={error}
         lastLoadedAt={lastLoadedAt}
+        status={data?.status}
         updatedAt={data?.updatedAt}
       />
 

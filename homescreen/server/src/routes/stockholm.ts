@@ -20,13 +20,24 @@ const VISIT_STOCKHOLM_EVENTS_URL =
 router.get("/", async (_req, res) => {
   try {
     const cacheMs = envNumber("STOCKHOLM_EVENTS_CACHE_MS", 3 * 60 * 60_000);
-    const payload = await withCache("stockholm-events", cacheMs, loadEvents);
+    const cached = await withCache("stockholm-events", cacheMs, loadEvents);
 
-    res.json(payload);
+    if (cached.stale) {
+      res.json({
+        ...cached.value,
+        status: "stale",
+        message:
+          "Visit Stockholm kunde inte uppdateras. Visar senaste sparade eventlistan.",
+      });
+      return;
+    }
+
+    res.json(cached.value);
   } catch (error) {
     console.error("Stockholm events route failed:", error);
     res.status(502).json({
-      message: "Kunde inte hämta events från Visit Stockholm.",
+      message:
+        "Kunde inte hämta events från Visit Stockholm och ingen sparad eventlista finns ännu.",
     });
   }
 });

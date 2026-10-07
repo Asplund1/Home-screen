@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import { envNumber, loadLocalEnv } from "./library/env";
 import weatherRouter from "./routes/weather";
@@ -14,8 +13,8 @@ loadLocalEnv();
 const app = express();
 const clientDistPath = path.resolve(__dirname, "../../client/dist");
 
-// Grundläggande middleware för CORS och JSON bodyparsing.
-app.use(cors());
+// Dashboarden anropas enbart från Chromium på samma Raspberry Pi. CORS behövs
+// därför inte, och JSON-parsning behålls för eventuella lokala API-anrop.
 app.use(express.json());
 
 // Enkel health check för att snabbt kunna se om servern lever.
@@ -46,10 +45,10 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Porten kan styras via .env men har ett stabilt default-värde för lokal utveckling.
 const PORT = envNumber("PORT", 8080);
+const HOST = "127.0.0.1";
 
-// Servern lyssnar på alla nätverksinterface så att den även kan nås från Raspberry Pi/LAN.
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
+// Endast processer på samma Raspberry Pi kan nå dashboardservern.
+app.listen(PORT, HOST, () => {
+  console.log(`Backend running on http://${HOST}:${PORT}`);
 });
