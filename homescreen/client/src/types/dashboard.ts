@@ -1,37 +1,37 @@
-// Alla typer för API-svaren samlas här så att både App och komponenter använder samma kontrakt.
+// Alla typer för API-svaren samlas här så att App och komponenter använder samma kontrakt.
 
-export type ResourceStatus = "fallback" | "live";
+export type ResourceStatus = "live" | "stale";
 
 export type ResourceState<T> = {
-    data: T | null;
-    error: string | null;
-    isLoading: boolean;
-    lastLoadedAt: number | null;
+  data: T | null;
+  error: string | null;
+  isLoading: boolean;
+  lastLoadedAt: number | null;
 };
 
 export type WeatherData = {
-    current: {
-        description: string;
-        humidity: number | null;
-        precipitationMm: number | null;
-        sunrise: string | null;
-        sunset: string | null;
-        temperatureC: number | null;
-        windKph: number | null;
-    };
-    hourly: Array<{
-        description: string;
-        precipitationMm: number | null;
-        temperatureC: number | null;
-        time: string;
-        windKph: number | null;
-    }>;
-    location: string;
-    message: string;
-    source: "mock" | "open-meteo";
-    status: ResourceStatus;
-    updatedAt: string;
-    fetchedAt: string;
+  current: {
+    description: string;
+    humidity: number | null;
+    precipitationMm: number | null;
+    sunrise: string | null;
+    sunset: string | null;
+    temperatureC: number | null;
+    windKph: number | null;
+  };
+  hourly: Array<{
+    description: string;
+    precipitationMm: number | null;
+    temperatureC: number | null;
+    time: string;
+    windKph: number | null;
+  }>;
+  location: string;
+  message: string;
+  source: "open-meteo";
+  status: ResourceStatus;
+  updatedAt: string;
+  fetchedAt: string;
 };
 
 export type SubwayDeparture = {
@@ -43,9 +43,22 @@ export type SubwayDeparture = {
   state?: string;
 };
 
+export type SubwayDisruption = {
+  details: string;
+  id: string;
+  scope?: string;
+  severity: "high" | "low" | "medium";
+  title: string;
+  url?: string;
+};
+
 export type SubwayData = {
   station: string;
   departures: SubwayDeparture[];
+  disruptions: SubwayDisruption[];
+  disruptionsStale: boolean;
+  disruptionsUpdatedAt?: string;
+  status: ResourceStatus;
   updatedAt: string;
 };
 
@@ -72,6 +85,6 @@ export type StockholmEventsData = {
     endDate: string;
   };
   source: "visit-stockholm";
-  status: "live";
+  status: ResourceStatus;
   updatedAt: string;
 };
