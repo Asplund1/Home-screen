@@ -51,6 +51,7 @@ export function WeatherSection({ state }: WeatherSectionProps) {
       <PanelFooter
         error={error}
         lastLoadedAt={lastLoadedAt}
+        status={data?.status}
         updatedAt={data?.updatedAt}
       />
 
