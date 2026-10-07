@@ -10,11 +10,33 @@ type WeatherPanelProps = {
   onEmpty: React.ReactNode;
 };
 
+type WeatherInsight = {
+  icon: string;
+  label: string;
+  value: string;
+};
+
+const precipitationThresholdMm = 0.2;
+const rainLookaheadMs = 8 * 60 * 60_000;
+
 const sunCardStyles = {
   p: 1,
   borderRadius: 1.25,
   backgroundColor: "rgba(63, 63, 63, 0.04)",
   border: "1px solid rgba(118, 116, 190, 0.44)",
+};
+
+const insightCardStyles = {
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
+  alignItems: "center",
+  columnGap: 0.6,
+  minWidth: 0,
+  px: 0.7,
+  py: 0.45,
+  borderRadius: 1,
+  backgroundColor: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 function filterForecastByHours(
@@ -52,6 +74,7 @@ export function WeatherPanel({
       items: filterForecastByHours(tomorrowForecast, fixedForecastHours),
     },
   ];
+  const insights = buildWeatherInsights(data);
 
   return (
     <Box
@@ -151,9 +174,52 @@ export function WeatherPanel({
       <Box
         sx={{
           display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gap: 0.55,
+          mt: 0.75,
+          flexShrink: 0,
+        }}
+      >
+        {insights.map((insight) => (
+          <Box key={insight.label} sx={insightCardStyles}>
+            <Icon icon={insight.icon} width={17} />
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                color="text.secondary"
+                sx={{
+                  fontSize: "0.66rem",
+                  lineHeight: 1.05,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {insight.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  mt: 0.15,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {insight.value}
+              </Typography>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+
+      <Box
+        sx={{
+          display: "grid",
           gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
           gap: 1.25,
-          mt: 1.25,
+          mt: 0.75,
           flex: 1,
           minHeight: 0,
         }}
@@ -230,4 +296,93 @@ export function WeatherPanel({
       </Box>
     </Box>
   );
+}
+
+function buildWeatherInsights(data: WeatherData): WeatherInsight[] {
+  const now = Date.now();
+  const currentPrecipitation = data.current.precipitationMm ?? 0;
+  const futurePrecipitation = data.hourly.find((item) => {
+    const itemTime = Date.parse(item.time);
+    return (
+      Number.isFinite(itemTime) &&
+      itemTime > now &&
+      itemTime <= now + rainLookaheadMs &&
+      (item.precipitationMm ?? 0) >= precipitationThresholdMm
+    );
+  });
+
+  const precipitationSummary = getPrecipitationSummary(
+    currentPrecipitation,
+    data.current.description,
+    futurePrecipitation,
+    now,
+  );
+
+  const umbrellaNeeded =
+    currentPrecipitation >= precipitationThresholdMm ||
+    (futurePrecipitation
+      ? Date.parse(futurePrecipitation.time) <= now + 6 * 60 * 60_000
+      : false);
+
+  return [
+    {
+      icon: umbrellaNeeded ? "mdi:umbrella" : "mdi:umbrella-closed",
+      label: umbrellaNeeded ? "Paraply" : "Nederbörd",
+      value: precipitationSummary,
+    },
+    {
+      icon: "mdi:weather-windy",
+      label: "Vind",
+      value:
+        data.current.windKph != null
+          ? `${formatNumber(data.current.windKph)} km/h`
+          : "-",
+    },
+    {
+      icon: "mdi:weather-rainy",
+      label: "Nu",
+      value: `${formatNumber(currentPrecipitation)} mm`,
+    },
+    {
+      icon: "mdi:water-percent",
+      label: "Luftfuktighet",
+      value:
+        data.current.humidity != null
+          ? `${formatNumber(data.current.humidity)} %`
+          : "-",
+    },
+  ];
+}
+
+function getPrecipitationSummary(
+  currentPrecipitation: number,
+  currentDescription: string,
+  nextPrecipitation: WeatherData["hourly"][number] | undefined,
+  now: number,
+): string {
+  if (currentPrecipitation >= precipitationThresholdMm) {
+    return isSnowDescription(currentDescription) ? "Snö nu" : "Regn nu";
+  }
+
+  if (!nextPrecipitation) {
+    return "Torrt 8 h";
+  }
+
+  const nextTime = Date.parse(nextPrecipitation.time);
+  const hoursUntil = Math.max(1, Math.round((nextTime - now) / 60 / 60_000));
+  const precipitationType = isSnowDescription(nextPrecipitation.description)
+    ? "Snö"
+    : "Regn";
+
+  return `${precipitationType} om ~${hoursUntil} h`;
+}
+
+function isSnowDescription(description: string): boolean {
+  return /snö/i.test(description);
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("sv-SE", {
+    maximumFractionDigits: 1,
+  }).format(value);
 }
