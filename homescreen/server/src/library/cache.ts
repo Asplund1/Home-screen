@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import os from "os";
 import path from "path";
@@ -119,7 +120,7 @@ async function persistEntry<T>(key: string, entry: CacheEntry<T>): Promise<void>
   await fs.mkdir(cacheDirectory, { recursive: true });
 
   const targetPath = getCachePath(key);
-  const temporaryPath = `${targetPath}.${process.pid}.tmp`;
+  const temporaryPath = `${targetPath}.${process.pid}.${randomUUID()}.tmp`;
 
   await fs.writeFile(temporaryPath, JSON.stringify(entry), "utf8");
   await fs.rename(temporaryPath, targetPath);
