@@ -200,7 +200,7 @@ function normalizeEvent(event: VisitStockholmEvent): RankedStockholmEvent | null
     hasTime: Boolean(event.start_time),
     primaryCategorySlug: categorySlugs[0] ?? "uncategorized",
     relevanceScore: 0,
-    url: createEventUrl(event.url) ?? event.external_website_url ?? undefined,
+    url: getEventUrl(event),
   };
 
   rankedEvent.relevanceScore = getRelevanceScore(rankedEvent);
@@ -560,16 +560,36 @@ function cleanText(value: string): string {
     .trim();
 }
 
-function createEventUrl(slug: string | null | undefined): string | undefined {
-  if (!slug) {
+function getEventUrl(event: VisitStockholmEvent): string | undefined {
+  // Visit Stockholm's `url` field can be a slug rather than a working public URL.
+  // Prefer the organizer/event website supplied by the API so QR codes lead to a
+  // real event page instead of constructing a Visit Stockholm URL that may 404.
+  return (
+    normalizeHttpUrl(event.external_website_url) ??
+    normalizeHttpUrl(event.url)
+  );
+}
+
+function normalizeHttpUrl(value: string | null | undefined): string | undefined {
+  if (!value) {
     return undefined;
   }
 
-  if (/^https?:\/\//iu.test(slug)) {
-    return slug;
+  const trimmedValue = value.trim();
+  if (!/^https?:\/\//iu.test(trimmedValue)) {
+    return undefined;
   }
 
-  return `https://www.visitstockholm.com/events/${slug}/`;
+  try {
+    const parsedUrl = new URL(trimmedValue);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return undefined;
+    }
+
+    return parsedUrl.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function stripRankingFields(event: RankedStockholmEvent): StockholmEvent {
