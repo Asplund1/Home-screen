@@ -43,8 +43,8 @@ type WeatherResponse = {
   }>;
   location: string;
   message: string;
-  source: "mock" | "open-meteo";
-  status: "fallback" | "live";
+  source: "open-meteo";
+  status: "live" | "stale";
   updatedAt: string;
   fetchedAt: string;
 };
@@ -54,12 +54,25 @@ const router = Router();
 router.get("/", async (_req, res) => {
   try {
     const cacheMs = envNumber("WEATHER_CACHE_MS", 10 * 60_000);
-    const payload = await withCache("weather", cacheMs, loadWeather);
+    const cached = await withCache("weather", cacheMs, loadWeather);
 
-    res.json(payload);
+    if (cached.stale) {
+      res.json({
+        ...cached.value,
+        status: "stale",
+        message:
+          "Open-Meteo kunde inte uppdateras. Visar senaste sparade riktiga väderdata.",
+      } satisfies WeatherResponse);
+      return;
+    }
+
+    res.json(cached.value);
   } catch (error) {
     console.error("Weather route failed:", error);
-    res.json(createMockWeather("Open-Meteo kunde inte hämtas just nu."));
+    res.status(502).json({
+      message:
+        "Kunde inte hämta väderdata från Open-Meteo och ingen sparad väderdata finns ännu.",
+    });
   }
 });
 
@@ -122,37 +135,6 @@ function toMaybeNumber(value: number | undefined): number | null {
   }
 
   return Math.round(value * 10) / 10;
-}
-
-function createMockWeather(message: string): WeatherResponse {
-  const now = Date.now();
-  const location = envString("WEATHER_LOCATION_NAME", "Råcksta") ?? "Råcksta";
-  const timestamp = new Date().toISOString();
-
-  return {
-    current: {
-      description: "Växlande molnighet",
-      humidity: 71,
-      precipitationMm: 0.2,
-      sunrise: new Date(new Date().setHours(6, 12, 0, 0)).toISOString(),
-      sunset: new Date(new Date().setHours(18, 4, 0, 0)).toISOString(),
-      temperatureC: 8,
-      windKph: 13,
-    },
-    hourly: Array.from({ length: 48 }, (_, offset) => ({
-      time: new Date(now + offset * 60 * 60_000).toISOString(),
-      description: offset < 12 ? "Lätt molnigt" : "Klart",
-      precipitationMm: offset === 2 ? 0.4 : 0,
-      temperatureC: 8 - Math.max(0, offset - 1),
-      windKph: 12 + offset,
-    })),
-    location,
-    message,
-    source: "mock",
-    status: "fallback",
-    updatedAt: timestamp,
-    fetchedAt: timestamp,
-  };
 }
 
 function getWeatherCodeLabel(code: number | null): string {
